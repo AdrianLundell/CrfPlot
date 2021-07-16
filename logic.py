@@ -1,10 +1,8 @@
-from datetime import date
-from operator import pos
-from re import M
 import pandas as pd
 import geopandas as gpd
 import numpy as np 
 import matplotlib.pyplot as plt
+import regression
 
 #CLASSES----------------------------------------------------------------------------------------------------------------
 class HelmertTransform():
@@ -37,28 +35,35 @@ class HelmertTransform():
     def repr(self, unit, scale):
 
         params = scale_parameters(self.parameters, unit, scale)
-        sigmas = scale_parameters(self.sigmas, unit, scale)
 
-        return f"""
-==========HELMERT TRANSFORMATION PARAMETERS======================
+        result =  f"""
+HELMERT TRANSFORMATION PARAMETERS
            X                    Y                    Z 
 C       = {params["C"].T}
 S       = {params["S"].T}
 ω       = {params["OMEGA"].T}
 
-SIGMAS
+"""
+        if self.sigmas:
+            sigmas = scale_parameters(self.sigmas, unit, scale)
+            result += f"""
+HELMERT PARAMETER UNCERTAINTIES
 C_sigma = {sigmas["C"].T}
 S_sigma = {sigmas["S"].T}
 ω_sigma = {sigmas["OMEGA"].T}
-================================================================="""
+
+"""
+
+        return result
+
 
     def plot_sites(self, ax: plt.Axes):
         plot_sites(self.df_from, ax)
         plot_sites(self.df_to, ax)
         plot_sites(self.df_transformed, ax)
 
-    def plot_residuals(self, ax1: plt.Axes, ax2: plt.Axes):
-        plot_residuals(self.df_to, self.df_from, self.df_transformed, ax1, ax2)
+    def plot_residuals(self, ax1: plt.Axes, ax2: plt.Axes, plot_transformed):
+        plot_residuals(self.df_to, self.df_from, self.df_transformed, ax1, ax2, plot_transformed)
 
     def plot_residuals_hist(self, ax1, ax2):
         plot_residuals_hist(self.df_from, self.df_transformed, ax1, ax2)
@@ -67,8 +72,19 @@ S_sigma = {sigmas["S"].T}
 def calculate_parameters(df_from: pd.DataFrame, df_to: pd.DataFrame, weighted: bool, type: str):
     """Calculates Helmert parameters with a single scale factor using least squares, weighted or ordinary"""
     
+    design_matrix = get_design_matrix(df_from, type)
+    observation_matrix = get_obeservation_matrix(df_from, df_to)
 
-    return parameters, sigmas
+    if weighted:
+        observation_var_matrix = get_var_matrix(df_from, df_to)
+        parameters, parameter_uncertainties = regression.weighted_least_squares(design_matrix, observation_matrix, observation_var_matrix)
+        parameter_uncertainties = rename_parameters(parameter_uncertainties, type)
+    else:
+        parameters, parameter_uncertainties = regression.ordinary_least_squares(design_matrix, observation_matrix), None
+
+    parameters = rename_parameters(parameters, type)
+
+    return parameters, parameter_uncertainties
 
 def get_obeservation_matrix(df_from: pd.DataFrame, df_to: pd.DataFrame):
     """Creates an observation matrix for an OLS parameter fitting of a Helmert-transform"""
@@ -99,11 +115,11 @@ def get_design_matrix(df: pd.DataFrame, type: str):
     design_matrix = np.hstack((design_matrix_x, design_matrix_y, design_matrix_z)).T
     return design_matrix
 
-def get_weight_matrix(df_from: pd.DataFrame, df_to: pd.DataFrame):
+def get_var_matrix(df_from: pd.DataFrame, df_to: pd.DataFrame):
     """Creates a weight matrix for a WLS parameter fitting of a Helmer transform""" 
     sigma = df_from.X**2 + df_from.Y**2 + df_from.Z**2 + df_to.X**2 + df_to.Y**2 + df_to.Z**2 
     sigma = sigma.to_numpy()
-    weight_matrix = np.diag(np.tile(1/np.sqrt(sigma), 3))
+    weight_matrix = np.diag(np.tile(sigma,3))
     
     return weight_matrix
 
@@ -128,6 +144,20 @@ def scale_parameters(parameters, rotation_unit, translation_unit):
         
     return scaled_parameters
      
+def rename_parameters(params, type):
+    """"""
+    c =  np.array([params["C0"], params["C1"], params["C2"]]).reshape(3,1)
+    if type == "7":
+           s =  np.array([params["C3"], params["C3"], params["C3"]]).reshape(3,1)
+           omega =  np.array([params["C4"], params["C5"], params["C6"]]).reshape(3,1)
+    elif type == "8":
+           s =  np.array([params["C3"], params["C3"], params["C4"]]).reshape(3,1)
+           omega =  np.array([params["C5"], params["C6"], params["C7"]]).reshape(3,1)
+    elif type == "9":
+           s =  np.array([params["C3"], params["C4"], params["C5"]]).reshape(3,1)
+           omega =  np.array([params["C6"], params["C7"], params["C8"]]).reshape(3,1)
+    
+    return {"C" : c, "S": s, "OMEGA" : omega}
 
 def helmert_transform_full_form(df: pd.DataFrame, parameters: dict):
     """Returns a new dataframe with transformed coordinates"""
@@ -195,17 +225,25 @@ def plot_sites(df: pd.DataFrame, ax: plt.Axes):
     #    plt.text(x,y,s, fontsize=5)
     ax.grid()
     
-def plot_residuals(df_to, df_from, df_transformed, ax1, ax2):
+def plot_residuals(df_to, df_from, df_transformed, ax1, ax2, plot_transformed):
     """Plots UEN-residuals scattered over a world map to axes"""
     worldmap.plot(color="lightgrey", ax=ax1)
     #ax1.quiver(df_from.LAT, df_from.LONG, df_from.dE, df_from.dN, color="b")
-    q = ax1.quiver(df_transformed.LAT, df_transformed.LONG, df_transformed.dE, df_transformed.dN, color="k", scale=2)
+    if plot_transformed:
+        q = ax1.quiver(df_transformed.LAT, df_transformed.LONG, df_transformed.dE, df_transformed.dN, color="k", scale=2)
+    else:
+        q = ax1.quiver(df_from.LAT, df_from.LONG, df_from.dE, df_from.dN, color="k", scale=2)
+
     ax1.quiverkey(q, 0.9,1.05,2*10**-1, "2e-1 m", color = "red")
     ax1.set_title("NE-residual components")
     ax1.grid()
 
     worldmap.plot(color="lightgrey", ax=ax2)
-    q = ax2.quiver(df_transformed.LAT, df_transformed.LONG, np.zeros(len(df_from.dU)), df_transformed.dU, scale=2)
+    if plot_transformed:
+        q = ax2.quiver(df_transformed.LAT, df_transformed.LONG, np.zeros(len(df_from.dU)), df_transformed.dU, scale=2)
+    else:
+        q = ax2.quiver(df_from.LAT, df_from.LONG, np.zeros(len(df_from.dU)), df_from.dU, scale=2)
+
     ax2.set_title("UP-residual component")
     ax2.quiverkey(q, 0.9,1.05,2*10**-1, "2e-1 m", color = "red")
     ax2.grid()
@@ -268,31 +306,31 @@ def timestamp_to_year(timestamp):
 
     return year
 
-"""New ideas
-DONE Units: 
-    Rotation 
-        Either nano-radians OR (micro arc second, mas, micro time seconds (differ by a factor of 24))
+# """New ideas
+# DONE Units: 
+#     Rotation 
+#         Either nano-radians OR (micro arc second, mas, micro time seconds (differ by a factor of 24))
 
-        mas: 360 deg, 60 sec
-        Tme 360 deg 24 h 60min 60 sec 
-        Check box
+#         mas: 360 deg, 60 sec
+#         Tme 360 deg 24 h 60min 60 sec 
+#         Check box
 
-    Scale 
-        Parts perbillion
+#     Scale 
+#         Parts perbillion
 
-    Translation 
-        millimeters / centimeters checkbox
+#     Translation 
+#         millimeters / centimeters checkbox
 
-    Vector for scale in plot
+#     Vector for scale in plot
 
-Reading files:
-    read in date, .sta : regex on name -> mjd 
-    .ssc: last column
+# Reading files:
+#     read in date, .sta : regex on name -> mjd 
+#     .ssc: last column
 
-Put on: Given VLBI XYZ file: Plot up UEN values with ellipes
-    plot vectors and unc. 
-    put ellips at tip of vector
-    this is by memo 
+# Put on: Given VLBI XYZ file: Plot up UEN values with ellipes
+#     plot vectors and unc. 
+#     put ellips at tip of vector
+#     this is by memo 
 
 
-"""
+# """

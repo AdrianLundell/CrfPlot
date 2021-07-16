@@ -45,6 +45,10 @@ class MainWindow(tk.Tk):
         self.transform_type = tk.StringVar(self, '7')
         self.transform_type.trace("w", self.transform_type_change)
 
+        #Plot variables
+        self.plot_transformed = tk.BooleanVar(self, value=True)
+        self.plot_transformed.trace("w", self.update_plot)
+
         self.results_frame = tk.Frame(self)
         self.plot = Plot(self.results_frame, 2, 1)
         self.parameter_display = ParameterDisplay(self.results_frame)
@@ -67,6 +71,9 @@ class MainWindow(tk.Tk):
         self.rotation_check = ttk.Checkbutton(self.control_frame, variable=self.rotation_unit, onvalue="sec", offvalue="si")
         self.translation_check_label = ttk.Label(self.control_frame, text="Scale unit [cm/mm]")
         self.translation_check = ttk.Checkbutton(self.control_frame, variable=self.translation_unit, onvalue="cm", offvalue="mm")
+
+        self.plot_transformed_label = tk.Label(self.control_frame, text="Plot transformed/ original")
+        self.plot_transformed_check = tk.Checkbutton(self.control_frame, variable=self.plot_transformed, onvalue=True, offvalue=False)
 
         self.place_elements()
 
@@ -97,6 +104,9 @@ class MainWindow(tk.Tk):
         self.translation_check_label.grid(row=0, column=6)
         self.translation_check.grid(row=1, column=6)
         
+        self.plot_transformed_label.grid(row=0, column=7)
+        self.plot_transformed_check.grid(row=1, column=7)
+
         self.control_frame.pack(expand=False, side="bottom", pady=40)
         
 
@@ -116,11 +126,14 @@ class MainWindow(tk.Tk):
         if not self.to_file_path.get() == "" and not self.from_file_path.get() == "":
             self.transform = HelmertTransform(self.df_from, self.df_to, self.weighted.get(), self.transform_type.get())
         
-            self.plot.clear()
-            self.transform.plot_residuals(self.plot.axes[0], self.plot.axes[1])
-            self.plot.draw()
+            self.update_plot()
 
             self.update_parameter_display()
+
+    def update_plot(self, *args):
+        self.plot.clear()
+        self.transform.plot_residuals(self.plot.axes[0], self.plot.axes[1], self.plot_transformed.get())
+        self.plot.draw()
 
     def update_parameter_display(self, *args):
         """Updates the parameter display"""
