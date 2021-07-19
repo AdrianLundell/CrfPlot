@@ -13,7 +13,7 @@ def weighted_least_squares(design_matrix, observation_matrix, observation_var_ma
 
     parameter_uncertainties = np.linalg.inv(design_matrix.T @ weight_matrix @ design_matrix)
     parameters = parameter_uncertainties @ design_matrix.T @ weight_matrix @ observation_matrix
-    parameter_uncertainties = np.diag(parameter_uncertainties)
+    parameter_uncertainties = np.sqrt(np.diag(parameter_uncertainties))
 
     return parameters_to_dict(parameters, parameter_names), parameters_to_dict(parameter_uncertainties, parameter_names)
 

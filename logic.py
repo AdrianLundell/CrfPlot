@@ -117,7 +117,7 @@ def get_design_matrix(df: pd.DataFrame, type: str):
 
 def get_var_matrix(df_from: pd.DataFrame, df_to: pd.DataFrame):
     """Creates a weight matrix for a WLS parameter fitting of a Helmer transform""" 
-    sigma = df_from.X**2 + df_from.Y**2 + df_from.Z**2 + df_to.X**2 + df_to.Y**2 + df_to.Z**2 
+    sigma = df_from.X_sigma**2 + df_from.Y_sigma**2 + df_from.Z_sigma**2 + df_to.X_sigma**2 + df_to.Y_sigma**2 + df_to.Z_sigma**2 
     sigma = sigma.to_numpy()
     weight_matrix = np.diag(np.tile(sigma,3))
     
@@ -255,7 +255,7 @@ def plot_residuals_hist(df_from, df_transformed, ax1, ax2):
 
 
 #DATA LOADING FUNCTIONS-------------------------------------------------------------------------------------------------
-def load_sta(fpath: str, epoch: float):
+def load_sta(fpath: str, epoch: float = 0):
     """Load a .sta TRF file to a pandas dataframe"""
 
     column_names = ["Value_Type", "Station_Name", "Date", "X", "X_sigma", "Y", "Y_sigma", "Z", "Z_sigma", ]
