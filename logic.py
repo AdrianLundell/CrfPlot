@@ -281,14 +281,22 @@ def load_ssc(fpath: str):
     """Load a .ssc TRF file to a pandas dataframe"""
     
     column_names = ["Station_Name", "X", "Y", "Z", "X_sigma", "Y_sigma", "Z_sigma"]
-    column_specs = [(10, 26), (37,51), (51, 65), (65,78), (79,85), (86,92), (93,99)]
+    column_specs = [(10, 26), (37,50), (50, 64), (64,77), (79,85), (86,92), (93,99)]
     
-    df = pd.read_fwf(fpath, colspecs=column_specs, names = column_names, skiprows=7)
+    df = pd.read_fwf(fpath, skiprows=7)
+    df = df.iloc[:, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]
+    df.columns = ["Domes", "Station_Name", "Tech", "Code", "X", "Y", "Z", "X_sigma", "Y_sigma", "Z_sigma", "Soln"]
+    if df.Code.dtype == float:
+        df.Code = df.Code.astype(str).str.zfill(4)
+        
+    df.Soln = df.Soln.fillna(1)
+    
     df = df.dropna()    
     df = df.reset_index(drop=True)
     df[["X", "X_sigma", "Y", "Y_sigma", "Z", "Z_sigma"]] = df[["X", "X_sigma", "Y", "Y_sigma", "Z", "Z_sigma"]].astype(np.float64)
 
     df = calculate_long_lat(df)
+    df = df.set_index(df.Station_Name)
     return df
 
 def calculate_long_lat(df: pd.DataFrame):
