@@ -11,7 +11,7 @@ n = len(a.index)
 residuals = (a[["X", "Y", "Z"]] - b[["X", "Y", "Z"]])*1000
 variances = (a[["X_sigma", "Y_sigma", "Z_sigma"]]*1000)**2 + (b[["X_sigma", "Y_sigma", "Z_sigma"]]*1000)**2
 
-#%% Calculate translation parameters
+#%% Calculate translation parameters, seperate calculations
 for dim in ["X", "Y", "Z"]:
     X = np.ones((n,1))
     y = np.array(residuals[dim]).reshape(n,1)
@@ -20,7 +20,29 @@ for dim in ["X", "Y", "Z"]:
     o_par = ordinary_least_squares(X, y)
     w_par, w_par_unsc = weighted_least_squares(X, y, y_var)
 
-    print(f"{dim} : {o_par['C0']}/{w_par['C0']}/{np.sqrt(w_par_unsc['C0'])} (par/weight par/unsc)")
+    print(f"{dim} : {o_par['C0']}/{w_par['C0']}/{w_par_unsc['C0']} (par/weight par/unsc)")
+
+#%%Calculate translation parameters, one calculation 
+X_list = []
+y_list = []
+y_var_list = []
+
+for i, dim in enumerate(["X", "Y", "Z"]):
+    X_temp = np.zeros((n,3))
+    X_temp[:,i:i+1] = np.ones((n,1))
+    X_list.append(X_temp)
+
+    y_list.append(np.array(residuals[dim]).reshape(n,1))
+    y_var_list.append(np.array(variances[dim + "_sigma"]).reshape(n))
+
+X = np.vstack(X_list)
+y = np.vstack(y_list)
+y_var = np.diag(np.hstack(y_var_list))
+
+o_par = ordinary_least_squares(X, y)
+w_par, w_par_unsc = weighted_least_squares(X, y, y_var)
+
+print(o_par, w_par, w_par_unsc)
 
 # %% load data
 import pandas as pd
@@ -79,4 +101,4 @@ df_to = df_to.set_index(df_to.Station_Name)
 # %%
 print(logic.calculate_parameters(df_from, df_to, True, "7"))
 
-# %%
+# %% 

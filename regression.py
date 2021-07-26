@@ -3,7 +3,7 @@ import numpy as np
 def ordinary_least_squares(design_matrix, observation_matrix, parameter_names = None):
     """Ordinary least squares fit"""
     parameters = np.linalg.inv(design_matrix.T @ design_matrix) @ design_matrix.T @ observation_matrix
-    parameters = parameters_to_dict(parameters, parameter_names)
+    #parameters = parameters_to_dict(parameters, parameter_names)
 
     return parameters
 
@@ -15,7 +15,8 @@ def weighted_least_squares(design_matrix, observation_matrix, observation_var_ma
     parameters = parameter_uncertainties @ design_matrix.T @ weight_matrix @ observation_matrix
     parameter_uncertainties = np.sqrt(np.diag(parameter_uncertainties))
 
-    return parameters_to_dict(parameters, parameter_names), parameters_to_dict(parameter_uncertainties, parameter_names)
+#    return parameters_to_dict(parameters, parameter_names), parameters_to_dict(parameter_uncertainties, parameter_names)
+    return parameters, parameter_uncertainties
 
 def parameters_to_dict(parameters, parameter_names = None):
     """Puts an array of parameters into a readable dict form"""
