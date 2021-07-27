@@ -1,9 +1,5 @@
-from symbol import parameters
-import sys, getopt
-from logic import *
-from interface import * 
 
-import matplotlib.pyplot as plt 
+from HelmertTool.interface.MainWindow import MainWindow
 
 if __name__ == '__main__':
     # try:
