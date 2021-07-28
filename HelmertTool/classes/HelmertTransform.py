@@ -16,12 +16,17 @@ class HelmertTransform():
     df_transformed : pd.DataFrame   #Transformed values
     epoch : float                   #Epoch for value in modified julian date
     
-    def __init__(self, df_from: pd.DataFrame, df_to: pd.DataFrame, parameters: HelmertParameters, weighted: bool = False, type: str = "7", epoch = 0):
+    def __init__(self, df_from: pd.DataFrame, df_to: pd.DataFrame, parameters: HelmertParameters = None, weighted: bool = False, type = "7", epoch = 0):
+
         self.weighted = weighted 
         self.type = type
         self.epoch = epoch
     
-        self.parameters = parameters
+        if parameters:
+            self.parameters = parameters
+        else:
+            self.parameters = HelmertParameters()
+        self.parameters.type = type
 
         self.df_to = df_to
         self.df_from = df_from

@@ -80,6 +80,8 @@ class MainWindow(tk.Tk):
         self.plot_transformed_check = tk.Checkbutton(self.control_frame, variable=self.plot_transformed, onvalue=True, offvalue=False)
         
         self.select_stations_button = ttk.Button(self.control_frame, text="Select stations", command = self.select_stations, state = "disable")
+        self.calculate_parameters_button = ttk.Button(self.control_frame, text = "Calculate parameter")
+        self.transfrom_button = ttk.Button(self.control_frame, text = "Transform")
 
         self.place_elements()
 
@@ -95,17 +97,17 @@ class MainWindow(tk.Tk):
         self.results_frame.columnconfigure(1, weight=2)
         self.results_frame.rowconfigure(0, weight=1)
 
-        self.select_stations_button.grid(row=1, column=8)
+        self.select_stations_button.grid(row=3, column=3)
 
         self.to_file_selecter_label.grid(row=0, column=0, sticky = "EW")
-        self.to_file_selecter.grid(row=0, column=1, sticky="EW")
+        self.to_file_selecter.grid(row=0, column=1, sticky="EW", columnspan=4)
         self.from_file_selecter_label.grid(row=1, column=0, sticky = "EW")
-        self.from_file_selecter.grid(row=1, column=1, sticky="EW")
+        self.from_file_selecter.grid(row=1, column=1, sticky="EW", columnspan=4)
         
-        self.weighted_button_label.grid(row=0, column=2)
-        self.weighted_button.grid(row=1, column=2, sticky= "EW")
-        self.transform_type_combo_label.grid(row=0, column=3)
-        self.transform_type_combo.grid(row=1, column=3, sticky= "EW")
+        self.weighted_button_label.grid(row=2, column=0)
+        self.weighted_button.grid(row=3, column=0)
+        self.transform_type_combo_label.grid(row=2, column=1)
+        self.transform_type_combo.grid(row=3, column=1)
         #self.epoch_entry_label.grid(row=0, column=4)
         #self.epoch_entry.grid(row=1, column=4)
         
@@ -114,14 +116,17 @@ class MainWindow(tk.Tk):
         #self.translation_check_label.grid(row=0, column=6)
         #self.translation_check.grid(row=1, column=6)
         
-        self.plot_transformed_label.grid(row=0, column=7)
-        self.plot_transformed_check.grid(row=1, column=7)
+        #self.plot_transformed_label.grid(row=2, column=2)
+        #self.plot_transformed_check.grid(row=3, column=2)
 
+        self.transfrom_button.grid(row=10, column=1)
+        self.calculate_parameters_button.grid(row=10, column=2)
 
         self.parameter_view.grid(row=1, column=0)
         self.control_frame.grid(row=0, column=0)
         self.results_frame.grid(row=0, rowspan=2, column=1)
         
+
 
     def df_from_change(self, *args):
         """Called on from_file change. Updates the df_from and calls new_helmert_transform"""

@@ -21,7 +21,17 @@ class HelmertParameters():
         self.translation = Triple(*self.list[0:3])
         self.scale = Triple(*self.list[3:6])
         self.rotation = Triple(*self.list[6:])
+
+        self.type = None
         
+    def get(self):
+        if self.type == "7":
+            return [*self.list[:3], *self.list[5:]]
+        if self.type == "8":
+            return [*self.list[:3], *self.list[4:]]
+        else:
+            return self.list
+
     def set(self, values, sigmas = None):
         """Updates the non custom parameters as a list of values and (optionally) sigmas, matching by order"""
 

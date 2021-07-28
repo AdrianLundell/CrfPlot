@@ -43,7 +43,17 @@ class ParameterEntry(tk.Frame):
         """Change unit of the displayed value"""
         self.unit = unit
         self.unit_text_var.set(unit.symbol)
-        self.internal_var.set(self.external_var.get() * unit.convertion_factor)
+
+        value = self.external_var.get() * unit.convertion_factor
+        self.internal_var.set(round(value, 10))
+
+        sigma = self.sigma_var.get()
+        if sigma == np.nan:
+            self.sigma_var.set("N/A")
+        else:
+            sigma = sigma * self.unit.convertion_factor
+            self.sigma_var.set(round(sigma, 10))
+
 
     def set_from_external(self, *args):
         """Set displayed value from external value"""
@@ -52,7 +62,7 @@ class ParameterEntry(tk.Frame):
             self.internal_var.set("N/A")
         else:
             value = value * self.unit.convertion_factor
-            self.internal_var.set(round(value, 5))
+            self.internal_var.set(round(value, 10))
 
         sigma = self.sigma_var.get()
         if sigma == np.nan:
@@ -69,7 +79,7 @@ class ParameterEntry(tk.Frame):
             new_value = float(new_value)/self.unit.convertion_factor
             assert self.validate(new_value)
 
-            self.external_var.set(new_value)            
+            self.external_var.set(round(new_value,5))            
         except: 
             self.set_from_external()
 

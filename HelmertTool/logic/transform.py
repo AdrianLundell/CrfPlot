@@ -19,6 +19,11 @@ def calculate_parameters(df_from: pd.DataFrame, df_to: pd.DataFrame, weighted: b
     else:
         calculated_parameters, parameter_uncertainties = regression.ordinary_least_squares(design_matrix, observation_matrix), None
 
+    if type == "7":
+        calculated_parameters = np.insert(calculated_parameters, slice(4,5), [calculated_parameters[3],calculated_parameters[3]])
+    if type == "8":
+        calculated_parameters = np.insert(calculated_parameters, 4, calculated_parameters[3])
+
     return calculated_parameters, parameter_uncertainties
 
 def get_obeservation_matrix(df_from: pd.DataFrame, df_to: pd.DataFrame):
@@ -62,7 +67,7 @@ def fix_parameters(parameters, design_matrix, observation_matrix):
     """"""
     save = []
     
-    for i, par in enumerate(parameters.list):
+    for i, par in enumerate(parameters.get()):
         if par.is_custom.get():
             observation_matrix = observation_matrix - design_matrix[:, i] * par.value.get()
         else:
