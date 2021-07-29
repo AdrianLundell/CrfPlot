@@ -29,7 +29,7 @@ class FileSelecter(tk.Frame):
     def place_elements(self):
         """Geometry management"""
         self.file_entry.grid(row=0, column=0, sticky="EW")
-        self.file_button.grid(row=0, column=1, sticky="W")
+        self.file_button.grid(row=0, column=1, sticky="W", padx=10)
         
         self.columnconfigure(0, weight=1)
 

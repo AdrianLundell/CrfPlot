@@ -1,6 +1,8 @@
 import tkinter as tk 
-import tkinter.ttk as ttk 
+import tkinter.ttk as ttk
+from numpy import pad 
 import pandas as pd 
+import numpy as np 
 
 #Must be a better way of structuring this?
 from HelmertTool.interface.FileSelecter import FileSelecter
@@ -8,136 +10,106 @@ from HelmertTool.interface.ParameterView import ParameterView
 from HelmertTool.interface.Plot import Plot
 from HelmertTool.interface.SelectStations import SelectStationsWindow 
 
-from HelmertTool.classes.HelmertParameters import HelmertParameters
 from HelmertTool.classes.HelmertTransform import HelmertTransform
 
-from HelmertTool.logic.load import *
+from HelmertTool.interface.InterfaceState import InterfaceState
+import HelmertTool.logic.load as load
 
 class MainWindow(tk.Tk):
     """Main application class for the helmert transfrom interface"""
 
+    file_formats = [".sta", ".ssc"]
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.file_formats = [".sta", ".ssc"]
+        #Data
         self.df_from = None
         self.df_to = None
-
         self.stations = None
-        self.parameters = HelmertParameters()
+        self.transform = None 
 
-        self.rotation_unit = tk.StringVar(self, value="si")
-        self.rotation_unit.trace("w", self.update_parameter_display)
-        self.translation_unit = tk.StringVar(self, value = "mm")
-        self.translation_unit.trace("w", self.update_parameter_display)
+        self.state = InterfaceState(self)
 
-        self.epoch = tk.StringVar(self)
-        self.epoch.trace("w", self.new_helmert_transform)
-        self.epoch.trace("w", self.df_from_change)
-        self.epoch.trace("w", self.df_to_change)
-
-        self.to_file_path = tk.StringVar(self)
-        self.to_file_path.trace("w", self.new_helmert_transform)
-        self.to_file_path.trace("w", self.df_to_change)
+        #Create Tkinter widgets
+        self.data_frame = tk.Frame(self)
+        self.from_file_selecter_label = ttk.Label(self.data_frame, text="Transform from:")
+        self.from_file_selecter = FileSelecter(self.data_frame, self.state.transform.from_file_path, self.file_formats)
+        self.to_file_selecter_label = ttk.Label(self.data_frame, text="Transform to:")
+        self.to_file_selecter = FileSelecter(self.data_frame, self.state.transform.to_file_path, self.file_formats)
+        self.select_stations_button = ttk.Button(self.data_frame, text="Select stations", state = "disable")
         
-        self.from_file_path = tk.StringVar(self)
-        self.from_file_path.trace("w", self.new_helmert_transform)
-        self.from_file_path.trace("w", self.df_from_change)
+        self.line1 = ttk.Separator(self, orient = "horizontal")
+
+        self.config_frame = tk.Frame(self)
+        self.weighted_button_label = ttk.Label(self.config_frame, text="Weighted")
+        self.weighted_button = ttk.Checkbutton(self.config_frame, variable=self.state.transform.weighted, onvalue=True, offvalue=False)
+        self.transform_type_combo_label = ttk.Label(self.config_frame, text="N parameters")
+        self.transform_type_combo = ttk.Combobox(self.config_frame, textvariable=self.state.transform.type, values = ['7', '8', '9'], width=3)
+        self.calculate_button = ttk.Button(self.config_frame, text = "Calculate parameter")
+        self.transform_button = ttk.Button(self.config_frame, text = "Transform")
+        self.reset_button = ttk.Button(self.config_frame, text = "Reset parameters")
         
-        self.weighted = tk.BooleanVar(self, False)
-        self.weighted.trace("w", self.weighted_change)
-        self.transform_type = tk.StringVar(self, '9')
-        self.transform_type.trace("w", self.transform_type_change)
+        self.line2 = ttk.Separator(self, orient = "horizontal")
 
-        #Plot variables
-        self.plot_transformed = tk.BooleanVar(self, value=True)
-        self.plot_transformed.trace("w", self.update_plot)
+        self.parameter_frame = tk.Frame(self)
+        self.parameter_view = ParameterView(self.parameter_frame)
 
-        self.results_frame = tk.Frame(self)
-        self.plot = Plot(self.results_frame, 2, 1)
-        self.parameter_view = ParameterView(self, self.parameters)
+        self.plot_frame = tk.Frame(self)
+        self.plot = Plot(self.plot_frame, 2, 1)        
 
-        self.control_frame = tk.Frame(self)
-        self.from_file_selecter_label = ttk.Label(self.control_frame, text="Transform from")
-        self.from_file_selecter = FileSelecter(self.control_frame, self.from_file_path, self.file_formats)
-        self.to_file_selecter_label = ttk.Label(self.control_frame, text="Transform to")
-        self.to_file_selecter = FileSelecter(self.control_frame, self.to_file_path, self.file_formats)
+        #Place Tkinter widgets
+        self.data_frame.grid(row=0, column=0, padx=10, pady=10)
+        self.from_file_selecter_label.grid(row=0, column=0, sticky="w")
+        self.from_file_selecter.grid(row=1, column=0, sticky="ew", pady=4)
+        self.to_file_selecter_label.grid(row=2, column=0, sticky="w")
+        self.to_file_selecter.grid(row=3, column=0, sticky="ew", pady=4)
+        self.select_stations_button.grid(row=4, column=0, sticky = "w", pady=10)
+
+        self.line1.grid(row=1, column=0, sticky="ew")
+
+        self.config_frame.grid(row=2, column=0, padx=10, pady=10)
+        self.weighted_button_label.grid(row=0, column=0)
+        self.weighted_button.grid(row=1, column=0)
+        self.transform_type_combo_label.grid(row=0, column=1)
+        self.transform_type_combo.grid(row=1, column=1)
+        self.calculate_button.grid(row=1, column=2)
+        self.transform_button.grid(row=1, column=3)
+        self.reset_button.grid(row=1, column=4)
+
+        self.line2.grid(row=3, column=0, sticky="ew")
+
+        self.parameter_frame.grid(row=4, column=0, padx=10, pady=10)
+        self.parameter_view.pack()
+
+        self.plot_frame.grid(row=0, column=1, rowspan=5)
+        self.plot.pack()
         
-        self.weighted_button_label = ttk.Label(self.control_frame, text="Weighted")
-        self.weighted_button = ttk.Checkbutton(self.control_frame, variable=self.weighted, onvalue=True, offvalue=False)
-        self.transform_type_combo_label = ttk.Label(self.control_frame, text="N parameters")
-        self.transform_type_combo = ttk.Combobox(self.control_frame, textvariable=self.transform_type, values = ['7', '8', '9'])
+        #Bind actions
+        self.state.transform.from_file_path.trace_add("write", self.df_from_change)
+        self.state.transform.to_file_path.trace_add("write", self.df_to_change)
+        self.select_stations_button.config(command = self.select_stations)
 
-        self.epoch_entry_label = ttk.Label(self.control_frame, text="Epoch")
-        self.epoch_entry = ttk.Entry(self.control_frame, textvariable=self.epoch)
+        self.state.transform.type.trace_add("write", self.parameter_view.scale_type_change)
 
-        self.rotation_check_label = ttk.Label(self.control_frame, text="Rotation unit [classic/si]")
-        self.rotation_check = ttk.Checkbutton(self.control_frame, variable=self.rotation_unit, onvalue="sec", offvalue="si")
-        self.translation_check_label = ttk.Label(self.control_frame, text="Scale unit [cm/mm]")
-        self.translation_check = ttk.Checkbutton(self.control_frame, variable=self.translation_unit, onvalue="cm", offvalue="mm")
-
-        self.plot_transformed_label = tk.Label(self.control_frame, text="Plot transformed/ original")
-        self.plot_transformed_check = tk.Checkbutton(self.control_frame, variable=self.plot_transformed, onvalue=True, offvalue=False)
-        
-        self.select_stations_button = ttk.Button(self.control_frame, text="Select stations", command = self.select_stations, state = "disable")
-        self.calculate_parameters_button = ttk.Button(self.control_frame, text = "Calculate parameter")
-        self.transfrom_button = ttk.Button(self.control_frame, text = "Transform")
-
-        self.place_elements()
+        self.calculate_button.config(command = self.calculate_parameters)
+        self.transform_button.config(command = self.calculate_transform)
+        self.reset_button.config(command = self.reset_parameters)
 
     def select_stations(self, *args):
         """Open station selection window"""
         self.select_stations_window = SelectStationsWindow(self)
 
-    def place_elements(self):
-        """Geometry management"""
-
-        self.plot.grid(row=0, column=0, sticky="NESW")
-        self.results_frame.columnconfigure(0, weight=1)
-        self.results_frame.columnconfigure(1, weight=2)
-        self.results_frame.rowconfigure(0, weight=1)
-
-        self.select_stations_button.grid(row=3, column=3)
-
-        self.to_file_selecter_label.grid(row=0, column=0, sticky = "EW")
-        self.to_file_selecter.grid(row=0, column=1, sticky="EW", columnspan=4)
-        self.from_file_selecter_label.grid(row=1, column=0, sticky = "EW")
-        self.from_file_selecter.grid(row=1, column=1, sticky="EW", columnspan=4)
-        
-        self.weighted_button_label.grid(row=2, column=0)
-        self.weighted_button.grid(row=3, column=0)
-        self.transform_type_combo_label.grid(row=2, column=1)
-        self.transform_type_combo.grid(row=3, column=1)
-        #self.epoch_entry_label.grid(row=0, column=4)
-        #self.epoch_entry.grid(row=1, column=4)
-        
-        #self.rotation_check_label.grid(row=0, column=5)
-        #self.rotation_check.grid(row=1, column=5)
-        #self.translation_check_label.grid(row=0, column=6)
-        #self.translation_check.grid(row=1, column=6)
-        
-        #self.plot_transformed_label.grid(row=2, column=2)
-        #self.plot_transformed_check.grid(row=3, column=2)
-
-        self.transfrom_button.grid(row=10, column=1)
-        self.calculate_parameters_button.grid(row=10, column=2)
-
-        self.parameter_view.grid(row=1, column=0)
-        self.control_frame.grid(row=0, column=0)
-        self.results_frame.grid(row=0, rowspan=2, column=1)
-        
-
-
     def df_from_change(self, *args):
         """Called on from_file change. Updates the df_from and calls new_helmert_transform"""
-        if not self.from_file_path.get()=="":
-            self.df_from = load_sta(self.from_file_path.get(), self.epoch.get())
+        if not self.state.transform.from_file_path.get()=="":
+            self.df_from = load.load_sta(self.state.transform.from_file_path.get())
             self.set_stations()
 
     def df_to_change(self, *args):
         """Called on to_file change. Updates the df_from and calls new_helmert_transform"""
-        if not self.to_file_path.get()=="":
-            self.df_to = load_sta(self.to_file_path.get(), self.epoch.get())
+        if not self.state.transform.to_file_path.get()=="":
+            self.df_to = load.load_sta(self.state.transform.to_file_path.get())
             self.set_stations()
 
     def set_stations(self):
@@ -153,35 +125,35 @@ class MainWindow(tk.Tk):
             self.stations = pd.DataFrame({"Station_Name" : stations, "Sigma" : sigmas, "Selected" : True})
             self.select_stations_button.config(state = "normal")
 
-    def new_helmert_transform(self, *args):
-        """Runs a new helmert transform and updates the interface if both df_to and df_from are loaded"""
+    def calculate_parameters(self, *args):
+        pass 
 
-        if not self.to_file_path.get() == "" and not self.from_file_path.get() == "":
+    def calculate_transform(self, *args):
+        pass 
 
-            df_from = self.df_from[self.stations.Selected]
-            df_to = self.df_to[self.stations.Selected]
+    def reset_parameters(self, *args):
+        """Reset all parameter values to zero"""
+        for parameter in self.state.parameters.get_parameter_dict().values():
+            parameter.value.set(0)
+            if self.state.transform.weighted:
+                parameter.sigma.set(0)
+            else:
+                #TODO: No value?
+                parameter.sigma.set(0) 
 
-            self.transform = HelmertTransform(df_from, df_to, self.parameters, self.weighted.get(), self.transform_type.get())
+    # def new_helmert_transform(self, *args):
+    #     """Runs a new helmert transform and updates the interface if both df_to and df_from are loaded"""
+    #     if not self.to_file_path.get() == "" and not self.from_file_path.get() == "":
+
+    #         df_from = self.df_from[self.stations.Selected]
+    #         df_to = self.df_to[self.stations.Selected]
+
+    #         self.transform = HelmertTransform(df_from, df_to, self.parameters, self.weighted.get(), self.transform_type.get())
         
-            self.update_plot()
-            self.update_parameter_display()
+    #         self.update_plot()
+    #         self.update_parameter_display()
 
-    def update_plot(self, *args):
-        self.plot.clear()
-        self.transform.plot_residuals(self.plot.axes[0], self.plot.axes[1], self.plot_transformed.get())
-        self.plot.draw()
-
-    def update_parameter_display(self, *args):
-        """Updates the parameter display"""
-        pass
-       # self.parameters.set(self.transform.parameters)
-        #if not self.to_file_path.get() == "" and not self.from_file_path.get() == "":
-        #    self.parameter_display.set(self.transform.repr(self.rotation_unit.get(), self.translation_unit.get()))
-
-    def weighted_change(self, *args):
-        """Called on weighted change"""
-        self.new_helmert_transform()
-
-    def transform_type_change(self, *args):
-        """Called on transform_type change"""
-        self.new_helmert_transform()
+    # def update_plot(self, *args):
+    #     self.plot.clear()
+    #     self.transform.plot_residuals(self.plot.axes[0], self.plot.axes[1], self.plot_transformed.get())
+    #     self.plot.draw()

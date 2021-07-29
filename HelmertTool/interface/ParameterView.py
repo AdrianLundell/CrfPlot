@@ -5,35 +5,31 @@ from HelmertTool.interface.ParameterEntry import ParameterEntry
 import HelmertTool.logic.units as units 
 
 class ParameterView(tk.Frame):
-    def __init__(self, master, parameters, *args, **kwargs):
+    def __init__(self, master, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
 
-        self.parameters = parameters
-        self.scale_unit_var = tk.StringVar(self, value = "mm")
-        self.scale_unit_var.trace("w", self.scale_unit_change)
-        self.rotation_unit_var = tk.StringVar(self, value = "si")
-        self.rotation_unit_var.trace("w", self.rotation_unit_change)
-        
-        for parameter in self.parameters.list:
-            parameter.entry = ParameterEntry(self, parameter)
+        self.state = master.master.state 
+
+        self.entry_dict = {name : ParameterEntry(self, par) for name, par in self.state.parameters.get_parameter_dict().items()}
 
         ttk.Label(self, text = "Translation").grid(row=0, column=0)
-        for i, parameter in enumerate(self.parameters.translation, 1):
-            parameter.entry.set_unit(units.meter)
-            parameter.entry.grid(row = i, column = 0)
+        for i, name in enumerate(self.state.parameters.translation_names,1):
+            self.entry_dict[name].set_unit(units.nano_meter)
+            self.entry_dict[name].grid(row = i, column = 0)
 
         ttk.Label(self, text = "Scale").grid(row=0, column=1)
-        for i, parameter in enumerate(self.parameters.scale, 1):
-            parameter.entry.set_unit(units.nano_meter)
-            parameter.entry.grid(row = i, column = 1)
+        for i, name in enumerate(self.state.parameters.scale_names,1):
+            self.entry_dict[name].set_unit(units.nano_meter)
+            self.entry_dict[name].grid(row = i, column = 1)
 
         ttk.Label(self, text = "Rotation").grid(row=0, column=2)
-        for i, parameter in enumerate(self.parameters.rotation, 1):
-            parameter.entry.set_unit(units.nano_radian)
-            parameter.entry.grid(row = i, column = 2)
+        for i, name in enumerate(self.state.parameters.rotation_names,1):
+            self.entry_dict[name].set_unit(units.nano_meter)
+            self.entry_dict[name].grid(row = i, column = 2)
 
-        ttk.Checkbutton(self, variable=self.scale_unit_var, onvalue="mm", offvalue="cm").grid(row=4, column=1)
-        ttk.Checkbutton(self, variable=self.rotation_unit_var, onvalue="si", offvalue="classic").grid(row=4, column=2)
+        self.scale_type_change()
+        # ttk.Checkbutton(self, variable=self.scale_unit_var, onvalue="mm", offvalue="cm").grid(row=4, column=1)
+        # ttk.Checkbutton(self, variable=self.rotation_unit_var, onvalue="si", offvalue="classic").grid(row=4, column=2)
 
 
     def calculate(self, *args):
@@ -70,3 +66,17 @@ class ParameterView(tk.Frame):
             self.parameters.rotation.x.entry.set_unit(units.micro_arcsecond)
             self.parameters.rotation.y.entry.set_unit(units.micro_arcsecond)
             self.parameters.rotation.z.entry.set_unit(units.timesecond)
+
+    def scale_type_change(self, *args):    
+        """"""
+        master_variable = self.state.parameters.is_custom["scale_x"]
+
+        if self.state.transform.type.get() == "7":
+            self.entry_dict["scale_y"].set_checkbox_state("disabled", master_variable)
+            self.entry_dict["scale_z"].set_checkbox_state("disabled", master_variable)
+        if self.state.transform.type.get() == "8":
+            self.entry_dict["scale_y"].set_checkbox_state("disabled", master_variable)
+            self.entry_dict["scale_z"].set_checkbox_state("normal", master_variable)
+        if self.state.transform.type.get() == "9":
+            self.entry_dict["scale_y"].set_checkbox_state("normal", master_variable)
+            self.entry_dict["scale_z"].set_checkbox_state("normal", master_variable)

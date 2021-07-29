@@ -13,6 +13,9 @@ class ParameterEntry(tk.Frame):
         self.state_var = parameter.is_custom
         self.sigma_var = parameter.sigma
 
+        self.state = None 
+        self.master_state_var = None
+
         self.external_var.trace("w", self.set_from_external)
         self.state_var.trace("w", self.set_state)
 
@@ -23,9 +26,9 @@ class ParameterEntry(tk.Frame):
         self.set_from_external()
 
         self.edit_check = ttk.Checkbutton(self, variable=self.state_var, onvalue=True, offvalue=False)
-        self.entry = ttk.Entry(self, textvariable=self.internal_var, state = "disabled", width=10)
+        self.entry = ttk.Entry(self, textvariable=self.internal_var, state = "disabled", width=8)
         self.plus_minus_sign = ttk.Label(self, text = "±")
-        self.sigma_entry = ttk.Entry(self, textvariable=self.sigma_var, state = "disabled", width=10)
+        self.sigma_entry = ttk.Label(self, textvariable=self.sigma_var)
 
         self.entry.bind("<Return>", self.set_from_internal)
         self.entry.bind("<Tab>", self.set_from_internal)
@@ -45,14 +48,14 @@ class ParameterEntry(tk.Frame):
         self.unit_text_var.set(unit.symbol)
 
         value = self.external_var.get() * unit.convertion_factor
-        self.internal_var.set(round(value, 10))
+        self.internal_var.set(value)
 
         sigma = self.sigma_var.get()
         if sigma == np.nan:
             self.sigma_var.set("N/A")
         else:
             sigma = sigma * self.unit.convertion_factor
-            self.sigma_var.set(round(sigma, 10))
+            self.sigma_var.set(sigma)
 
 
     def set_from_external(self, *args):
@@ -62,14 +65,14 @@ class ParameterEntry(tk.Frame):
             self.internal_var.set("N/A")
         else:
             value = value * self.unit.convertion_factor
-            self.internal_var.set(round(value, 10))
+            self.internal_var.set(value)
 
         sigma = self.sigma_var.get()
         if sigma == np.nan:
             self.sigma_var.set("N/A")
         else:
             sigma = sigma * self.unit.convertion_factor
-            self.sigma_var.set(round(sigma, 5))
+            self.sigma_var.set(sigma)
 
     def set_from_internal(self, *args):
         """Set external value from entered internal value, reset on failure"""
@@ -79,7 +82,7 @@ class ParameterEntry(tk.Frame):
             new_value = float(new_value)/self.unit.convertion_factor
             assert self.validate(new_value)
 
-            self.external_var.set(round(new_value,5))            
+            self.external_var.set(new_value)            
         except: 
             self.set_from_external()
 
@@ -91,4 +94,28 @@ class ParameterEntry(tk.Frame):
         """Enable/ disable entry field based on the state variable"""
         state = "normal" if self.state_var.get() else "disabled"
         self.entry.config(state=state)
-        self.sigma_entry.config(state=state)
+        #self.sigma_entry.config(state=state)
+
+    def set_state_external(self, *args):
+        """Set own state variable by an external master_variable"""
+        value = self.master_state_var.get()
+        self.state_var.set(value)
+
+    def set_checkbox_state(self, state, master_variable):
+        """The widget may operate in two states, enabled and following its own state, or disabled and following another master_variable"""
+        self.master_state_var = master_variable
+
+        if state == "normal" and not state == self.state:
+            try:
+                master_variable.trace_remove("write", self.trace_id)
+            except:
+                pass
+            self.edit_check.config(state = "normal")
+            
+        if state == "disabled" and not state == self.state:
+            self.trace_id = master_variable.trace_add("write", self.set_state_external)
+            self.edit_check.config(state = "disabled")
+            self.set_state_external()
+  
+        self.state = state 
+        
