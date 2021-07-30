@@ -43,6 +43,9 @@ class InterfaceState:
             self.weighted = tk.BooleanVar(master, value = False)
             self.type = tk.StringVar(master, value = "7")
     
+            self.chi_squared = tk.DoubleVar()
+            self.weightet_root_mean_squared = tk.DoubleVar()
+
     class DisplayState:
         
         def __init__(self, master) -> None:

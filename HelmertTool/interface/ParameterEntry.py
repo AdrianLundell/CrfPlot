@@ -92,7 +92,8 @@ class ParameterEntry(tk.Frame):
 
     def set_state(self, *args):
         """Enable/ disable entry field based on the state variable"""
-        state = "normal" if self.state_var.get() else "disabled"
+        state = "normal" if self.state_var.get() and not self.state == "disabled" else "disabled"
+        
         self.entry.config(state=state)
         #self.sigma_entry.config(state=state)
 
@@ -101,21 +102,33 @@ class ParameterEntry(tk.Frame):
         value = self.master_state_var.get()
         self.state_var.set(value)
 
-    def set_checkbox_state(self, state, master_variable):
+    def set_from_master_value(self, *args):
+        value = self.master_value.get()
+        value = value * self.unit.convertion_factor
+        self.internal_var.set(value)
+
+    def set_checkbox_state(self, state, master_variable, master_value):
         """The widget may operate in two states, enabled and following its own state, or disabled and following another master_variable"""
         self.master_state_var = master_variable
+        self.master_value = master_value
 
         if state == "normal" and not state == self.state:
+            self.state = state 
             try:
                 master_variable.trace_remove("write", self.trace_id)
+                master_value.trace_remove("write", self.value_trace_id)
             except:
                 pass
             self.edit_check.config(state = "normal")
-            
+            self.set_state()
+
         if state == "disabled" and not state == self.state:
+            self.state = state 
             self.trace_id = master_variable.trace_add("write", self.set_state_external)
+            self.value_trace_id = master_value.trace_add("write", self.set_from_master_value)
+
             self.edit_check.config(state = "disabled")
             self.set_state_external()
-  
-        self.state = state 
+            self.set_from_master_value()
+    
         
