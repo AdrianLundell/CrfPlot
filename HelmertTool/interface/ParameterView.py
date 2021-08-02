@@ -11,6 +11,10 @@ class ParameterView(tk.Frame):
         self.state = master.master.state 
         self.entry_dict = {name : ParameterEntry(self, par) for name, par in self.state.parameters.get_parameter_dict().items()}
 
+        parameters = self.state.parameters.get_parameter_dict()
+        self.entry_dict["scale_y"].master_parameter = parameters["scale_x"]
+        self.entry_dict["scale_z"].master_parameter = parameters["scale_x"]
+
         ttk.Label(self, text = "Translation").grid(row=0, column=0)
         for i, name in enumerate(self.state.parameters.translation_names,1):
             self.entry_dict[name].set_unit(units.meter)
@@ -56,15 +60,12 @@ class ParameterView(tk.Frame):
 
     def scale_type_change(self, *args):    
         """"""
-        master_variable = self.state.parameters.is_custom["scale_x"]
-        master_value = self.state.parameters.values["scale_x"]
-
         if self.state.transform.type.get() == "7":
-            self.entry_dict["scale_y"].set_checkbox_state("disabled", master_variable, master_value)
-            self.entry_dict["scale_z"].set_checkbox_state("disabled", master_variable, master_value)
+            self.entry_dict["scale_y"].toggle_slave(True)
+            self.entry_dict["scale_z"].toggle_slave(True)
         if self.state.transform.type.get() == "8":
-            self.entry_dict["scale_y"].set_checkbox_state("disabled", master_variable, master_value)
-            self.entry_dict["scale_z"].set_checkbox_state("normal", master_variable, master_value)
+            self.entry_dict["scale_y"].toggle_slave(True)
+            self.entry_dict["scale_z"].toggle_slave(False)
         if self.state.transform.type.get() == "9":
-            self.entry_dict["scale_y"].set_checkbox_state("normal", master_variable, master_value)
-            self.entry_dict["scale_z"].set_checkbox_state("normal", master_variable, master_value)
+            self.entry_dict["scale_y"].toggle_slave(True)
+            self.entry_dict["scale_z"].toggle_slave(True)

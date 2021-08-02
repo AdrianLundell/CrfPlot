@@ -1,4 +1,5 @@
 import tkinter as tk 
+import pandas as pd 
 
 class SelectStationsWindow(tk.Tk):
     
@@ -9,6 +10,8 @@ class SelectStationsWindow(tk.Tk):
         
         self.init_rows_and_header_frame()
         self.rows = {}
+        self.use_default_stations = True
+        self.default_stations = self.load_default_stations()
 
         for station in self.stations.itertuples():
             row = SelectStationsRow(self.rows_frame, station, self.set_selection)            
@@ -24,15 +27,16 @@ class SelectStationsWindow(tk.Tk):
 
         self.grid()
 
-        tk.Label(self.header_frame, text = "Select").grid(row=0, column=0)
-        tk.Button(self.header_frame, text = "Station name", command = self.sort_by_name).grid(row=0, column=1)
-        tk.Button(self.header_frame, text = "Sigma", command = self.sort_by_sigma).grid(row=0, column=2)
+        tk.Button(self.header_frame, text = "Select default stations", command = self.toggle_default_stations).grid(row=0, column=1)
+        tk.Label(self.header_frame, text = "Select").grid(row=1, column=0)
+        tk.Button(self.header_frame, text = "Station name", command = self.sort_by_name).grid(row=1, column=1)
+        tk.Button(self.header_frame, text = "Sigma", command = self.sort_by_sigma).grid(row=1, column=2)
 
         self.rowconfigure(0, weight=1)
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def on_close(self):
-        self.master.new_helmert_transform()
+        #self.master.new_helmert_transform()
         self.destroy()
 
     def grid(self):
@@ -55,7 +59,8 @@ class SelectStationsWindow(tk.Tk):
     def init_rows_and_header_frame(self):
         canvas = tk.Canvas(self, highlightthickness=0, height=170, width=500)
         canvas.grid(row=4, column=0, sticky="nsew")
-        header_canvas = tk.Canvas(self, highlightthickness=0, height=23) #!Hardcoded height
+        #header_canvas = tk.Canvas(self, highlightthickness=0, height=23) #!Hardcoded height
+        header_canvas = tk.Canvas(self, highlightthickness=0, height=50) #!Hardcoded height
         header_canvas.grid(row=2, column=0, sticky="we")
 
         def xview(*args):
@@ -84,12 +89,27 @@ class SelectStationsWindow(tk.Tk):
         self.rows_frame.bind("<Configure>", scroll_config)
         self.header_frame.bind("<Configure>", scroll_config)
 
+    def toggle_default_stations(self, *args):
+        
+        if self.use_default_stations:
+            for row in self.rows.values():
+                row.var.set(row.station.Station_Name in self.default_stations.values)
+            self.use_default_stations = False
+        else:
+            for row in self.rows.values():
+                row.var.set(True)
+            self.use_default_stations = True
+
+    def load_default_stations(self):
+        return pd.read_fwf("C:/Users/Adrian/Documents/NVI/HelmertTool/data/transform_sites.txt", header = None)
+
 class SelectStationsRow():
 
     def __init__(self, master, station, set_selection, *args, **kwargs):
 
         self.master = master 
         self.set_selection = set_selection
+        self.station = station
 
         self.var = tk.BooleanVar(self.master, value = station.Selected)
         self.var.trace("w", lambda *args: self.set_selection(station.Index, self.var.get()))

@@ -6,24 +6,28 @@ import HelmertTool.logic.units as units
 
 class ParameterEntry(tk.Frame):
     
-    def __init__(self, master, parameter, *args, **kwargs):
+    def __init__(self, master, parameter, master_parameter = None, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
 
-        self.external_var = parameter.value
-        self.state_var = parameter.is_custom
-        self.sigma_var = parameter.sigma
+        self.parameter = parameter
+        self.master_parameter = master_parameter
+        self.is_slave = False 
+        self.trace_ids = {}
 
-        self.state = None 
-        self.master_state_var = None
-
-        self.external_var.trace("w", self.set_from_external)
-        self.state_var.trace("w", self.set_state)
+        self.parameter.value.trace("w", self.set_value_from_external)
+        self.parameter.sigma.trace("w", self.set_sigma_from_external)
+        self.parameter.is_custom.trace("w", self.set_state)
 
         self.internal_var = tk.StringVar(self, value = "")
+        self.state_var = tk.BooleanVar(self, value = False)
+        self.state_var.trace_add("write", self.set_state)
+        
+        self.sigma_var = tk.StringVar(self, value = "")
         self.unit_text_var = tk.StringVar(self, "")
 
         self.set_unit(units.meter)
-        self.set_from_external()
+        self.set_value_from_external()
+        self.set_sigma_from_external()
 
         self.edit_check = ttk.Checkbutton(self, variable=self.state_var, onvalue=True, offvalue=False)
         self.entry = ttk.Entry(self, textvariable=self.internal_var, state = "disabled", width=8)
@@ -47,27 +51,27 @@ class ParameterEntry(tk.Frame):
         self.unit = unit
         self.unit_text_var.set(unit.symbol)
 
-        value = self.external_var.get() * unit.convertion_factor
+        value = self.parameter.value.get() * unit.convertion_factor
         self.internal_var.set(value)
 
-        sigma = self.sigma_var.get()
+        sigma = self.parameter.sigma.get()
         if sigma == np.nan:
             self.sigma_var.set("N/A")
         else:
             sigma = sigma * self.unit.convertion_factor
             self.sigma_var.set(sigma)
 
-
-    def set_from_external(self, *args):
+    def set_value_from_external(self, *args):
         """Set displayed value from external value"""
-        value = self.external_var.get()
+        value = self.parameter.value.get()
         if value == np.nan:
             self.internal_var.set("N/A")
         else:
             value = value * self.unit.convertion_factor
             self.internal_var.set(value)
 
-        sigma = self.sigma_var.get()
+    def set_sigma_from_external(self, *args):
+        sigma = self.parameter.sigma.get()
         if sigma == np.nan:
             self.sigma_var.set("N/A")
         else:
@@ -82,7 +86,7 @@ class ParameterEntry(tk.Frame):
             new_value = float(new_value)/self.unit.convertion_factor
             assert self.validate(new_value)
 
-            self.external_var.set(new_value)            
+            self.parameter.value.set(new_value)            
         except: 
             self.set_from_external()
 
@@ -92,43 +96,47 @@ class ParameterEntry(tk.Frame):
 
     def set_state(self, *args):
         """Enable/ disable entry field based on the state variable"""
-        state = "normal" if self.state_var.get() and not self.state == "disabled" else "disabled"
+        state = "normal" if self.state_var.get() and not self.is_slave else "disabled"
         
         self.entry.config(state=state)
         #self.sigma_entry.config(state=state)
 
-    def set_state_external(self, *args):
+    def set_from_master_is_custom(self, *args):
         """Set own state variable by an external master_variable"""
-        value = self.master_state_var.get()
+        value = self.master_parameter.is_custom.get()
         self.state_var.set(value)
 
     def set_from_master_value(self, *args):
-        value = self.master_value.get()
+        value = self.master_parameter.value.get()
         value = value * self.unit.convertion_factor
         self.internal_var.set(value)
 
-    def set_checkbox_state(self, state, master_variable, master_value):
+    def set_from_master_sigma(self, *args):
+        value = self.master_parameter.sigma.get()
+        value = value * self.unit.convertion_factor
+        self.sigma_var.set(value)
+
+    def toggle_slave(self, is_slave : bool):
         """The widget may operate in two states, enabled and following its own state, or disabled and following another master_variable"""
-        self.master_state_var = master_variable
-        self.master_value = master_value
 
-        if state == "normal" and not state == self.state:
-            self.state = state 
-            try:
-                master_variable.trace_remove("write", self.trace_id)
-                master_value.trace_remove("write", self.value_trace_id)
-            except:
-                pass
-            self.edit_check.config(state = "normal")
-            self.set_state()
-
-        if state == "disabled" and not state == self.state:
-            self.state = state 
-            self.trace_id = master_variable.trace_add("write", self.set_state_external)
-            self.value_trace_id = master_value.trace_add("write", self.set_from_master_value)
-
+        if is_slave and not self.is_slave:
+            self.is_slave = True
             self.edit_check.config(state = "disabled")
-            self.set_state_external()
+            
+            self.trace_ids["value"] = self.master_parameter.value.trace_add("write", self.set_from_master_value) 
+            self.trace_ids["sigma"] = self.master_parameter.sigma.trace_add("write", self.set_from_master_sigma) 
+            self.trace_ids["is_custom"] = self.master_parameter.is_custom.trace_add("write", self.set_from_master_is_custom) 
+
             self.set_from_master_value()
-    
-        
+            self.set_from_master_sigma()
+            self.set_from_master_is_custom()
+
+        elif not is_slave and self.is_slave:
+            self.is_slave = False
+            self.edit_check.config(state = "normal")
+
+            self.master_parameter.value.trace_remove("write", self.trace_ids["value"])
+            self.master_parameter.sigma.trace_remove("write", self.trace_ids["sigma"])
+            self.master_parameter.is_custom.trace_remove("write", self.trace_ids["is_custom"])
+
+            self.set_state()

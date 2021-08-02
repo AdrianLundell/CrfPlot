@@ -45,7 +45,7 @@ def calculate_parameters(df_from: pd.DataFrame, df_to: pd.DataFrame, weighted: b
         parameters, uncertainties = regression.weighted_least_squares(design_matrix, observation_vector, observation_var_matrix)
         uncertainties = {parameter : sigma for parameter, sigma in zip(design_vectors, uncertainties)}
     else:
-        parameters, uncertainties = regression.ordinary_least_squares(design_matrix, observation_vector), None
+        parameters, uncertainties = regression.ordinary_least_squares(design_matrix, observation_vector), {}
 
     parameters = {parameter : value for parameter, value in zip(design_vectors.keys(), parameters)}
 

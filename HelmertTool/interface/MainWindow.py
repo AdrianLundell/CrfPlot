@@ -59,7 +59,11 @@ class MainWindow(tk.Tk):
 
         self.parameter_frame = tk.Frame(self)
         self.parameter_view = ParameterView(self.parameter_frame)
-        #self.statistic_view = StatisticView(self.parameter_frame)
+        
+        self.chi2_label = ttk.Label(self.parameter_frame, text = "Chi squared: ")
+        self.chi_2_value = ttk.Label(self.parameter_frame, textvariable = self.state.transform.chi_squared) 
+        self.wrms_label = ttk.Label(self.parameter_frame, text = "Weighted root mean squared: ")
+        self.wrms_value = ttk.Label(self.parameter_frame, textvariable=self.state.transform.weighted_root_mean_squared)
 
         self.line3 = ttk.Separator(self, orient = "vertical")
 
@@ -97,7 +101,11 @@ class MainWindow(tk.Tk):
         self.line2.grid(row=8, column=0, sticky="ew")
 
         self.parameter_frame.grid(row=10, column=0, padx=10, pady=10)
-        self.parameter_view.pack()
+        self.parameter_view.grid(row=0, column=0, columnspan=4, pady=10)
+        self.chi2_label.grid(row=1, column=0)
+        self.chi_2_value.grid(row=1, column=1)
+        self.wrms_label.grid(row=1, column=2)
+        self.wrms_value.grid(row=1, column=3)
 
         self.line3.grid(row=0, column=1, rowspan=11)
 
@@ -167,16 +175,20 @@ class MainWindow(tk.Tk):
         for name, value in value_dict.items():
             self.state.parameters.values[name].set(value)
 
+        for name, value in sigma_dict.items():
+            self.state.parameters.sigmas[name].set(value)
+
     def update_transform(self, *args):
         self.calculate_transform()
         self.update_plot()
+        self.update_statistics()
 
     def calculate_transform(self, *args):
         parameter_dict = {name : var.get() for name, var in self.state.parameters.values.items()}
         
         df_from = self.df_from[self.stations.Selected]
         df_to = self.df_to[self.stations.Selected]
-        
+
         self.transformed = helmert_transform(df_from, parameter_dict)
         self.transformed = calculate_residuals(self.transformed, df_to)
         self.transformed = decompose_residuals(self.transformed)
@@ -186,6 +198,13 @@ class MainWindow(tk.Tk):
         transformed = self.transformed[self.stations.Selected]
         plot_residuals(transformed, self.plot.axes[0], self.plot.axes[1])
         self.plot.draw()
+
+    def update_statistics(self):
+        standared_errors = self.df_from.X_sigma**2 + self.df_from.Y_sigma**2 + self.df_from.Z_sigma**2 + self.df_to.X_sigma**2 + self.df_to.Y_sigma**2 + self.df_to.Z_sigma**2
+        value = sum(self.transformed.dX ** 2 / standared_errors)
+        
+        self.state.transform.chi_squared.set(value)
+        self.state.transform.weighted_root_mean_squared.set(value/sum(1/standared_errors))
 
     def reset_parameters(self, *args):
         """Reset all parameter values to zero"""
