@@ -11,7 +11,7 @@ class ParameterEntry(tk.Frame):
 
         self.parameter = parameter
         self.master_parameter = master_parameter
-        self.is_slave = False 
+        self.is_slave = False
         self.trace_ids = {}
 
         self.parameter.value.trace("w", self.set_value_from_external)
@@ -19,8 +19,7 @@ class ParameterEntry(tk.Frame):
         self.parameter.is_custom.trace("w", self.set_state)
 
         self.internal_var = tk.StringVar(self, value = "")
-        self.state_var = tk.BooleanVar(self, value = False)
-        self.state_var.trace_add("write", self.set_state)
+        self.state_var = self.parameter.is_custom
         
         self.sigma_var = tk.StringVar(self, value = "")
         self.unit_text_var = tk.StringVar(self, "")
@@ -52,31 +51,31 @@ class ParameterEntry(tk.Frame):
         self.unit_text_var.set(unit.symbol)
 
         value = self.parameter.value.get() * unit.convertion_factor
-        self.internal_var.set(value)
+        self.internal_var.set(self.value_to_string(value))
 
         sigma = self.parameter.sigma.get()
-        if sigma == np.nan:
+        if np.isnan(sigma):
             self.sigma_var.set("N/A")
         else:
             sigma = sigma * self.unit.convertion_factor
-            self.sigma_var.set(sigma)
+            self.sigma_var.set(self.value_to_string(sigma))
 
     def set_value_from_external(self, *args):
         """Set displayed value from external value"""
         value = self.parameter.value.get()
-        if value == np.nan:
+        if np.isnan(value):
             self.internal_var.set("N/A")
         else:
             value = value * self.unit.convertion_factor
-            self.internal_var.set(value)
+            self.internal_var.set(self.value_to_string(value))
 
     def set_sigma_from_external(self, *args):
         sigma = self.parameter.sigma.get()
-        if sigma == np.nan:
+        if np.isnan(sigma):
             self.sigma_var.set("N/A")
         else:
             sigma = sigma * self.unit.convertion_factor
-            self.sigma_var.set(sigma)
+            self.sigma_var.set(self.value_to_string(sigma))
 
     def set_from_internal(self, *args):
         """Set external value from entered internal value, reset on failure"""
@@ -85,10 +84,15 @@ class ParameterEntry(tk.Frame):
         try: 
             new_value = float(new_value)/self.unit.convertion_factor
             assert self.validate(new_value)
+            self.parameter.value.set(new_value)
 
-            self.parameter.value.set(new_value)            
-        except: 
-            self.set_from_external()
+        except:
+            if new_value == "":
+                self.parameter.value.set(0)
+
+        
+        self.set_value_from_external()
+        self.set_sigma_from_external()
 
     def validate(self, value):
         """Validation, (currently not in use)"""
@@ -104,17 +108,17 @@ class ParameterEntry(tk.Frame):
     def set_from_master_is_custom(self, *args):
         """Set own state variable by an external master_variable"""
         value = self.master_parameter.is_custom.get()
-        self.state_var.set(value)
+        self.parameter.is_custom.set(value)
 
     def set_from_master_value(self, *args):
         value = self.master_parameter.value.get()
-        value = value * self.unit.convertion_factor
-        self.internal_var.set(value)
+        self.parameter.value.set(value)
+        self.set_value_from_external()
 
     def set_from_master_sigma(self, *args):
         value = self.master_parameter.sigma.get()
-        value = value * self.unit.convertion_factor
-        self.sigma_var.set(value)
+        self.parameter.sigma.set(value)
+        self.set_sigma_from_external()
 
     def toggle_slave(self, is_slave : bool):
         """The widget may operate in two states, enabled and following its own state, or disabled and following another master_variable"""
@@ -140,3 +144,7 @@ class ParameterEntry(tk.Frame):
             self.master_parameter.is_custom.trace_remove("write", self.trace_ids["is_custom"])
 
             self.set_state()
+        
+    def value_to_string(self, value):
+        string = "{:.4f}".format(value)
+        return string     

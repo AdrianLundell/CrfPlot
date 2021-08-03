@@ -22,7 +22,7 @@ class ParameterView(tk.Frame):
 
         ttk.Label(self, text = "Scale").grid(row=0, column=1)
         for i, name in enumerate(self.state.parameters.scale_names,1):
-            self.entry_dict[name].set_unit(units.nano_meter)
+            self.entry_dict[name].set_unit(units.milli_meter)
             self.entry_dict[name].grid(row = i, column = 1)
 
         ttk.Label(self, text = "Rotation").grid(row=0, column=2)
@@ -67,5 +67,5 @@ class ParameterView(tk.Frame):
             self.entry_dict["scale_y"].toggle_slave(True)
             self.entry_dict["scale_z"].toggle_slave(False)
         if self.state.transform.type.get() == "9":
-            self.entry_dict["scale_y"].toggle_slave(True)
-            self.entry_dict["scale_z"].toggle_slave(True)
+            self.entry_dict["scale_y"].toggle_slave(False)
+            self.entry_dict["scale_z"].toggle_slave(False)

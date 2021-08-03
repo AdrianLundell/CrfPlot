@@ -34,7 +34,7 @@ class MainWindow(tk.Tk):
 
         self.state = InterfaceState(self)
 
-        #Create Tkinter widgets
+        #Tkinter widgets
         self.title_label = tk.Label(self, text = "HelmertTool", font="bold")
 
         self.data_frame = tk.Frame(self)
@@ -120,9 +120,7 @@ class MainWindow(tk.Tk):
         self.state.transform.type.trace_add("write", self.parameter_view.scale_type_change)
 
         self.calculate_button.config(command = self.calculate_parameters)
-
         self.transform_button.config(command = self.update_transform)
-        
         self.reset_button.config(command = self.reset_parameters)
 
     def select_stations(self, *args):
@@ -130,13 +128,13 @@ class MainWindow(tk.Tk):
         self.select_stations_window = SelectStationsWindow(self)
 
     def df_from_change(self, *args):
-        """Called on from_file change. Updates the df_from and calls new_helmert_transform"""
+        """Called on from_file change."""
         if not self.state.transform.from_file_path.get()=="":
             self.df_from = load.load_sta(self.state.transform.from_file_path.get())
             self.set_stations()
 
     def df_to_change(self, *args):
-        """Called on to_file change. Updates the df_from and calls new_helmert_transform"""
+        """Called on to_file change."""
         if not self.state.transform.to_file_path.get()=="":
             self.df_to = load.load_sta(self.state.transform.to_file_path.get())
             self.set_stations()

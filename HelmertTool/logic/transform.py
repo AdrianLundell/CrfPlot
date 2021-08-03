@@ -40,12 +40,15 @@ def calculate_parameters(df_from: pd.DataFrame, df_to: pd.DataFrame, weighted: b
     design_matrix = np.vstack(list(design_vectors.values())).T
 
     #Perform least square regression and return values in a dict
+    uncertainties = {parameter : np.nan for parameter in custom_dict}
     if weighted:
         observation_var_matrix = get_var_matrix(df_from, df_to)
-        parameters, uncertainties = regression.weighted_least_squares(design_matrix, observation_vector, observation_var_matrix)
-        uncertainties = {parameter : sigma for parameter, sigma in zip(design_vectors, uncertainties)}
+        parameters, new_uncertainties = regression.weighted_least_squares(design_matrix, observation_vector, observation_var_matrix)
+        new_uncertainties = {parameter : sigma for parameter, sigma in zip(design_vectors, new_uncertainties)}
+        uncertainties.update(new_uncertainties)
+   
     else:
-        parameters, uncertainties = regression.ordinary_least_squares(design_matrix, observation_vector), {}
+        parameters = regression.ordinary_least_squares(design_matrix, observation_vector)
 
     parameters = {parameter : value for parameter, value in zip(design_vectors.keys(), parameters)}
 

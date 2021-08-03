@@ -1,6 +1,7 @@
 from symbol import parameters
 import tkinter as tk 
 from collections import namedtuple
+from numpy import nan
 
 class InterfaceState:
     """Seperation layer between interface and logic, keeps information of currently """
@@ -19,7 +20,7 @@ class InterfaceState:
 
         def __init__(self, master) -> None:
             self.values = {name : tk.DoubleVar(master, value = 0) for name in self.parameter_names}
-            self.sigmas = {name : tk.DoubleVar(master, value = 0) for name in self.parameter_names}
+            self.sigmas = {name : tk.DoubleVar(master, value = nan) for name in self.parameter_names}
             self.is_custom = {name : tk.BooleanVar(master, value = False) for name in self.parameter_names}
 
         def get_parameter_dict(self):
