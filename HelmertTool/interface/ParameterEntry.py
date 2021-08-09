@@ -2,7 +2,7 @@ import tkinter as tk
 import tkinter.ttk as ttk 
 import numpy as np 
 
-import HelmertTool.logic.units as units
+from ..units import *
 
 class ParameterEntry(tk.Frame):
     
@@ -24,20 +24,20 @@ class ParameterEntry(tk.Frame):
         self.sigma_var = tk.StringVar(self, value = "")
         self.unit_text_var = tk.StringVar(self, "")
 
-        self.set_unit(units.meter)
+        self.set_unit(meter)
         self.set_value_from_external()
         self.set_sigma_from_external()
 
         self.edit_check = ttk.Checkbutton(self, variable=self.state_var, onvalue=True, offvalue=False)
-        self.entry = ttk.Entry(self, textvariable=self.internal_var, state = "disabled", width=8)
+        self.entry = ttk.Entry(self, textvariable=self.internal_var, state = "disabled", width=10)
         self.plus_minus_sign = ttk.Label(self, text = "±")
-        self.sigma_entry = ttk.Label(self, textvariable=self.sigma_var)
+        self.sigma_entry = ttk.Label(self, textvariable=self.sigma_var, width = 6)
 
         self.entry.bind("<Return>", self.set_from_internal)
         self.entry.bind("<Tab>", self.set_from_internal)
         self.entry.bind("<FocusOut>", self.set_from_internal)
 
-        self.unit_label = ttk.Label(self, textvariable=self.unit_text_var, width=5)
+        self.unit_label = ttk.Label(self, textvariable=self.unit_text_var, width=2)
     
         self.edit_check.grid(row=0, column=0)
         self.entry.grid(row=0, column=1)
@@ -90,7 +90,6 @@ class ParameterEntry(tk.Frame):
             if new_value == "":
                 self.parameter.value.set(0)
 
-        
         self.set_value_from_external()
         self.set_sigma_from_external()
 

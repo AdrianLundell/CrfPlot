@@ -1,22 +1,18 @@
 import tkinter as tk 
 import tkinter.ttk as ttk
-from numpy import pad 
 import pandas as pd 
 import numpy as np 
 
-#Must be a better way of structuring this?
-from HelmertTool.interface.FileSelecter import FileSelecter
-from HelmertTool.interface.ParameterView import ParameterView
-from HelmertTool.interface.Plot import Plot
-from HelmertTool.interface.SelectStations import SelectStationsWindow 
+from .FileSelecter import FileSelecter
+from .ParameterView import ParameterView
+from .Plot import Plot
+from .SelectStations import SelectStationsWindow 
 
-from HelmertTool.classes.HelmertTransform import HelmertTransform
+from .InterfaceState import InterfaceState
+from ..load import load_sta
 
-from HelmertTool.interface.InterfaceState import InterfaceState
-import HelmertTool.logic.load as load
-
-from HelmertTool.logic.plot import plot_residuals
-from HelmertTool.logic.transform import *
+from ..plot import plot_residuals
+from ..transform import *
 
 class MainWindow(tk.Tk):
     """Main application class for the helmert transfrom interface"""
@@ -130,13 +126,13 @@ class MainWindow(tk.Tk):
     def df_from_change(self, *args):
         """Called on from_file change."""
         if not self.state.transform.from_file_path.get()=="":
-            self.df_from = load.load_sta(self.state.transform.from_file_path.get())
+            self.df_from = load_sta(self.state.transform.from_file_path.get())
             self.set_stations()
 
     def df_to_change(self, *args):
         """Called on to_file change."""
         if not self.state.transform.to_file_path.get()=="":
-            self.df_to = load.load_sta(self.state.transform.to_file_path.get())
+            self.df_to = load_sta(self.state.transform.to_file_path.get())
             self.set_stations()
 
     def set_stations(self):
@@ -201,8 +197,8 @@ class MainWindow(tk.Tk):
         standared_errors = self.df_from.X_sigma**2 + self.df_from.Y_sigma**2 + self.df_from.Z_sigma**2 + self.df_to.X_sigma**2 + self.df_to.Y_sigma**2 + self.df_to.Z_sigma**2
         value = sum(self.transformed.dX ** 2 / standared_errors)
         
-        self.state.transform.chi_squared.set(value)
-        self.state.transform.weighted_root_mean_squared.set(value/sum(1/standared_errors))
+        self.state.transform.chi_squared.set(self.value_to_string(value))
+        self.state.transform.weighted_root_mean_squared.set(self.value_to_string(value/sum(1/standared_errors)))
 
     def reset_parameters(self, *args):
         """Reset all parameter values to zero"""
@@ -213,3 +209,7 @@ class MainWindow(tk.Tk):
             else:
                 #TODO: No value?
                 parameter.sigma.set(0) 
+    
+    def value_to_string(self, value):
+        string = "{:.4f}".format(value)
+        return string     

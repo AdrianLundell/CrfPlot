@@ -1,2 +1,5 @@
 data
 __pycache__
+build
+HelmertTool.egg-info
+dist

@@ -1,10 +1,8 @@
-from HelmertTool.logic.load import calculate_long_lat
 import pandas as pd
-import geopandas as gpd
 import numpy as np 
-import matplotlib.pyplot as plt
 
-import HelmertTool.logic.regression as regression
+from HelmertTool.load import calculate_long_lat
+from HelmertTool.regression import ordinary_least_squares, weighted_least_squares
 from HelmertTool.interface.InterfaceState import InterfaceState
 
 def calculate_parameters(df_from: pd.DataFrame, df_to: pd.DataFrame, weighted: bool, type: str, custom_dict : dict = None):
@@ -28,13 +26,13 @@ def calculate_parameters(df_from: pd.DataFrame, df_to: pd.DataFrame, weighted: b
     #Merge columns and create final design matrix
     if type == "7" and "scale_x" in design_vectors:
         #Scale_x is really scale_xyz here
-        design_vectors["scale_x"] = sum([design_vectors["scale_x"],design_vectors["scale_y"],design_vectors["scale_z"]])
+        design_vectors["scale_x"] = design_vectors["scale_x"] + design_vectors["scale_y"] + design_vectors["scale_z"]
         del design_vectors["scale_y"]        
         del design_vectors["scale_z"]        
     
     if type == "8" and "scale_x" in design_vectors:
         #Scale_x is really scale_xy here
-        design_vectors["scale_x"] = sum([design_vectors["scale_x"],design_vectors["scale_y"]])
+        design_vectors["scale_x"] = design_vectors["scale_x"] + design_vectors["scale_y"]
         del design_vectors["scale_y"]              
 
     design_matrix = np.vstack(list(design_vectors.values())).T
@@ -43,12 +41,12 @@ def calculate_parameters(df_from: pd.DataFrame, df_to: pd.DataFrame, weighted: b
     uncertainties = {parameter : np.nan for parameter in custom_dict}
     if weighted:
         observation_var_matrix = get_var_matrix(df_from, df_to)
-        parameters, new_uncertainties = regression.weighted_least_squares(design_matrix, observation_vector, observation_var_matrix)
+        parameters, new_uncertainties = weighted_least_squares(design_matrix, observation_vector, observation_var_matrix)
         new_uncertainties = {parameter : sigma for parameter, sigma in zip(design_vectors, new_uncertainties)}
         uncertainties.update(new_uncertainties)
    
     else:
-        parameters = regression.ordinary_least_squares(design_matrix, observation_vector)
+        parameters = ordinary_least_squares(design_matrix, observation_vector)
 
     parameters = {parameter : value for parameter, value in zip(design_vectors.keys(), parameters)}
 
@@ -83,10 +81,15 @@ def get_design_columns(df: pd.DataFrame):
 
 def get_var_matrix(df_from: pd.DataFrame, df_to: pd.DataFrame):
     """Creates a weight matrix for a WLS parameter fitting of a Helmer transform""" 
-    sigma = df_from.X_sigma**2 + df_from.Y_sigma**2 + df_from.Z_sigma**2 + df_to.X_sigma**2 + df_to.Y_sigma**2 + df_to.Z_sigma**2 
-    sigma = sigma.to_numpy()
-    weight_matrix = np.diag(np.tile(sigma,3))
+    var1 = df_from.X_sigma**2 + df_to.X_sigma**2
+    var2 = df_from.Y_sigma**2 + df_to.Y_sigma**2 
+    var3 = df_from.Z_sigma**2 + df_to.Z_sigma**2 
+    var = np.hstack([var1, var2, var3])
+    weight_matrix = np.diag(var)
     
+    #var = df_from.X_sigma**2 + df_to.X_sigma**2 + df_from.Y_sigma**2 + df_to.Y_sigma**2 + df_from.Z_sigma**2 + df_to.Z_sigma**2
+    #weight_matrix = np.diag(np.tile(var, 3))
+
     return weight_matrix
 
 def fix_parameters(parameters, design_matrix, observation_matrix):

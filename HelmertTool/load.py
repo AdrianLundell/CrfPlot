@@ -28,7 +28,7 @@ def load_ssc(fpath: str):
     column_names = ["Station_Name", "X", "Y", "Z", "X_sigma", "Y_sigma", "Z_sigma"]
     column_specs = [(10, 26), (37,50), (50, 64), (64,77), (79,85), (86,92), (93,99)]
     
-    df = pd.read_fwf(fpath, skiprows=7)
+    df = pd.read_fwf(fpath, skiprows=7, header = None)
     df = df.iloc[:, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]
     df.columns = ["Domes", "Station_Name", "Tech", "Code", "X", "Y", "Z", "X_sigma", "Y_sigma", "Z_sigma", "Soln"]
     if df.Code.dtype == float:
