@@ -7,7 +7,7 @@ def load_sta(fpath: str, epoch: float = 0):
     column_names = ["Value_Type", "Station_Name", "Date", "X", "X_sigma", "Y", "Y_sigma", "Z", "Z_sigma", ]
     column_specs = [(0,7), (10, 19), (19,25), (31,45), (52, 59), (65,79), (87,93), (99,113), (120,127)]
     
-    df = pd.read_fwf(fpath, colspecs=column_specs, names = column_names)
+    df = pd.read_fwf(fpath, colspecs=column_specs, header=None, names = column_names)
 
     df = df[df["Value_Type"]=="STA_GCX"]
     df["Station_Name"] = df["Station_Name"].str.replace("_", "")

@@ -35,9 +35,9 @@ class MainWindow(tk.Tk):
 
         self.data_frame = tk.Frame(self)
         self.from_file_selecter_label = ttk.Label(self.data_frame, text="Transform from:")
-        self.from_file_selecter = FileSelecter(self.data_frame, self.state.transform.from_file_path, self.file_formats)
+        self.from_file_selecter = FileSelecter(self.data_frame, self.state.transform.from_file_path, self.state.transform.from_epoch, self.file_formats)
         self.to_file_selecter_label = ttk.Label(self.data_frame, text="Transform to:")
-        self.to_file_selecter = FileSelecter(self.data_frame, self.state.transform.to_file_path, self.file_formats)
+        self.to_file_selecter = FileSelecter(self.data_frame, self.state.transform.to_file_path, self.state.transform.to_epoch, self.file_formats)
         self.select_stations_button = ttk.Button(self.data_frame, text="Select stations", state = "disable")
         
         #self.line1 = ttk.Separator(self, orient = "horizontal")

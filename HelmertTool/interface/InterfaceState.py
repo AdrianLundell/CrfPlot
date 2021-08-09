@@ -41,6 +41,8 @@ class InterfaceState:
         def __init__(self, master) -> None:
             self.to_file_path = tk.StringVar(master, value = "")
             self.from_file_path = tk.StringVar(master, value = "")
+            self.to_epoch = tk.DoubleVar(master, value = 2000)
+            self.from_epoch = tk.DoubleVar(master, value = 2000)
             self.weighted = tk.BooleanVar(master, value = False)
             self.type = tk.StringVar(master, value = "7")
     

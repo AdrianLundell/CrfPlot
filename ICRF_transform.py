@@ -59,13 +59,10 @@ The ICRF3 source coordinates reported in Tables 10–12 are
 provided for epoch 2015.0. As explained above, these coordinates
 should be propagated for observations at epochs away from
 that epoch using a Galactic acceleration amplitude of 5.8 as/yr.
-"""
 
-"""
 The coordinates of the 295 ICRF2...are not epoch-dependent and
 hence no epoch is explicitly stated. However, the listed positions are
-consistent with J2000.0. Coordinates of the remaining 922 (out of 1217)
-non-defining sources are listed in Table 19
+consistent with J2000.0. 
 
 Station positions and velocities were estimated, for reference epoch
 2000 Jan 01. No-net-rotation and no-net-translation constraints
@@ -74,16 +71,12 @@ with VTRF2008 [Nothnagel, 2008].
 
 -> epoch 2000, subtract 5.8*15 mas from ICRF3?
 
-
 [The rotations] cannot be exactly zero because the no-net-rotation constraints
 imposed to align ICRF3 onto ICRF2 were applied only
 to the ICRF2 defining sources (see Sect. 3.3). Additionally, the
 meaning of that alignment in the (new) context of inclusion of
 Galactic acceleration in the modeling remains somewhat uncertain
 since ICRF2, unlike ICRF3, did not have a reference epoch.
-
-
-In the data file both data points seems to be from J2000
 """
 
 # %% Create matrixes 

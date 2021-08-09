@@ -11,12 +11,15 @@ class FileSelecter(tk.Frame):
     file_entry : ttk.Entry
     file_button : ttk.Button
 
-    def __init__(self, master, external_var, file_formats, *args, **kwargs):
+    def __init__(self, master, external_var, external_epoch_var, file_formats, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
 
         self.file_formats = file_formats
         self.external_var = external_var
-        self.internal_var = tk.StringVar(self)
+        self.external_epoch = external_epoch_var
+
+        self.internal_var = tk.StringVar(self, self.external_var.get())
+        self.internal_epoch_var = tk.StringVar(self, value = self.external_epoch.get())
 
         self.file_entry = ttk.Entry(self, textvariable = self.internal_var, width=65)
         self.file_entry.bind("<FocusOut>", self.file_change, add = "+")
@@ -24,12 +27,18 @@ class FileSelecter(tk.Frame):
         self.file_entry.bind("<Return>", self.file_change, add = "+")
 
         self.file_button = ttk.Button(self, command = self.file_dialog, text="Open")
+        self.epoch_entry = ttk.Entry(self, textvariable=self.internal_epoch_var, width = 6)
+        self.epoch_entry.bind("<FocusOut>", self.epoch_change, add = "+")
+        self.epoch_entry.bind("<Tab>", self.epoch_change, add = "+")
+        self.epoch_entry.bind("<Return>", self.epoch_change, add = "+")
+
         self.place_elements()
 
     def place_elements(self):
         """Geometry management"""
         self.file_entry.grid(row=0, column=0, sticky="EW")
         self.file_button.grid(row=0, column=1, sticky="W", padx=10)
+        self.epoch_entry.grid(row=0, column=2, sticky="EW")
         
         self.columnconfigure(0, weight=1)
 
@@ -60,3 +69,14 @@ class FileSelecter(tk.Frame):
         correct_format = (format.lower() in self.file_formats)
         
         return not same_path and existing_path and correct_format
+
+    def epoch_change(self, *args):
+        """Changes the epoch value, reverting to the old value on error"""
+        value = self.internal_epoch_var.get()
+
+        try:
+            value = float(value)
+            self.external_epoch_var.set(value)
+        except:
+            value = self.external_epoch_var.get()
+            self.internal_epoch_var.set(value)
