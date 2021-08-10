@@ -1,5 +1,6 @@
 import tkinter as tk 
 import pandas as pd 
+import tkinter.ttk as ttk 
 
 class SelectStationsWindow(tk.Tk):
     
@@ -7,6 +8,8 @@ class SelectStationsWindow(tk.Tk):
         super().__init__()
         self.master = master
         self.stations = master.stations
+        self.resizable(height=False, width=False)
+        self.title("Select stations")
         
         self.init_rows_and_header_frame()
         self.rows = {}
@@ -17,24 +20,33 @@ class SelectStationsWindow(tk.Tk):
             row = SelectStationsRow(self.rows_frame, station, self.set_selection)            
             self.rows[station.Index] = row
         
-        self.header_frame.columnconfigure(0, minsize=100)
+        self.header_frame.columnconfigure(0, minsize=70)
         self.header_frame.columnconfigure(1, minsize=100)
-        self.header_frame.columnconfigure(2, minsize=100)
+        self.header_frame.columnconfigure(2, minsize=30)
 
-        self.rows_frame.columnconfigure(0, minsize=100)
+        self.rows_frame.columnconfigure(0, minsize=70)
         self.rows_frame.columnconfigure(1, minsize=100)
-        self.rows_frame.columnconfigure(2, minsize=100)
+        self.rows_frame.columnconfigure(2, minsize=30)
 
+
+        tk.Label(self.header_frame, text = "Select stations",font=("helvetica", 12)).grid(row=0, column=0, columnspan=2, pady=5, padx=5)
+        ttk.Button(self.header_frame, text = "Default", command = self.toggle_default_stations).grid(row=0, column=2)
+        ttk.Label(self.header_frame, text = "Select").grid(row=1, column=0, pady=5)
+        ttk.Button(self.header_frame, text = "Station name", command = self.sort_by_name).grid(row=1, column=1)
+        ttk.Button(self.header_frame, text = "Sigma", command = self.sort_by_sigma).grid(row=1, column=2)
         self.grid()
 
-        tk.Button(self.header_frame, text = "Select default stations", command = self.toggle_default_stations).grid(row=0, column=1)
-        tk.Label(self.header_frame, text = "Select").grid(row=1, column=0)
-        tk.Button(self.header_frame, text = "Station name", command = self.sort_by_name).grid(row=1, column=1)
-        tk.Button(self.header_frame, text = "Sigma", command = self.sort_by_sigma).grid(row=1, column=2)
-
-        self.rowconfigure(0, weight=1)
+        self.bind_all("<Up>", self.scroll_up)
+        self.bind_all("<Down>", self.scroll_down)
         self.protocol("WM_DELETE_WINDOW", self.on_close)
+        self.grab_set()
 
+    def scroll_up(self, *args):
+        self.canvas.yview_scroll(-5, "units")
+
+    def scroll_down(self, *args):
+        self.canvas.yview_scroll(5, "units")
+    
     def on_close(self):
         #self.master.new_helmert_transform()
         self.destroy()
@@ -57,33 +69,32 @@ class SelectStationsWindow(tk.Tk):
         self.grid()
 
     def init_rows_and_header_frame(self):
-        canvas = tk.Canvas(self, highlightthickness=0, height=170, width=500)
-        canvas.grid(row=4, column=0, sticky="nsew")
-        #header_canvas = tk.Canvas(self, highlightthickness=0, height=23) #!Hardcoded height
-        header_canvas = tk.Canvas(self, highlightthickness=0, height=50) #!Hardcoded height
-        header_canvas.grid(row=2, column=0, sticky="we")
+        header_canvas = tk.Canvas(self, highlightthickness=0, height=65, width=250) #!Hardcoded height
+        header_canvas.grid(row=0, column=0, sticky="news")
+        self.canvas = tk.Canvas(self, highlightthickness=0, height=700, width=250)
+        self.canvas.grid(row=1, column=0, sticky="news")
 
         def xview(*args):
-            canvas.xview(*args)
+            self.canvas.xview(*args)
             header_canvas.xview(*args)
 
-        yscrollbar = tk.Scrollbar(self, orient="vertical", command=canvas.yview)
-        yscrollbar.grid(row=4, column=1, sticky = "ns")
-        xscrollbar = tk.Scrollbar(self, orient="horizontal", command=xview)
-        xscrollbar.grid(row=5, column=0, sticky = "we")
+        self.yscrollbar = tk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.yscrollbar.grid(row=1, column=1, sticky = "ns")
+        self.xscrollbar = tk.Scrollbar(self, orient="horizontal", command=xview)
+        self.xscrollbar.grid(row=2, column=0, sticky = "we")
 
-        canvas.configure(yscrollcommand=yscrollbar.set, xscrollcommand=xscrollbar.set)
-        header_canvas.configure(xscrollcommand=xscrollbar.set)
+        self.canvas.configure(yscrollcommand=self.yscrollbar.set, xscrollcommand=self.xscrollbar.set)
+        header_canvas.configure(xscrollcommand=self.xscrollbar.set)
 
-        self.rows_frame = tk.Frame(canvas)
+        self.rows_frame = tk.Frame(self.canvas)
         self.header_frame = tk.Frame(header_canvas)
-        canvas.create_window((0, 0), window=self.rows_frame, anchor="nw")   
+        self.canvas.create_window((0, 0), window=self.rows_frame, anchor="nw")   
         header_canvas.create_window((0, 0), window=self.header_frame, anchor="nw")
         
         def scroll_config(*args):
             """Sets scroll region for table and header"""
-            region = (0,0, header_canvas.bbox("all")[2], canvas.bbox("all")[3])
-            canvas.configure(scrollregion=region)
+            region = (0,0, header_canvas.bbox("all")[2], self.canvas.bbox("all")[3])
+            self.canvas.configure(scrollregion=region)
             header_canvas.configure(scrollregion=header_canvas.bbox("all"))
 
         self.rows_frame.bind("<Configure>", scroll_config)
@@ -114,14 +125,14 @@ class SelectStationsRow():
         self.var = tk.BooleanVar(self.master, value = station.Selected)
         self.var.trace("w", lambda *args: self.set_selection(station.Index, self.var.get()))
 
-        self.check = tk.Checkbutton(self.master, variable=self.var, onvalue=True, offvalue=False)
+        self.check = ttk.Checkbutton(self.master, variable=self.var, onvalue=True, offvalue=False)
         self.station_name_label = tk.Label(self.master, text = station.Station_Name)
-        self.sigma_label = tk.Label(self.master, text = station.Sigma)
-
+        self.sigma_label = tk.Label(self.master, text = round(station.Sigma,3))
+   
     def grid(self, row):
         self.check.grid_forget()
-        self.check.grid(row=row, column=0)
+        self.check.grid(row=row, column=0, sticky="ew", padx=23)
         self.station_name_label.grid_forget()
-        self.station_name_label.grid(row=row, column=1)
+        self.station_name_label.grid(row=row, column=1, sticky="w", padx=10)
         self.sigma_label.grid_forget()
-        self.sigma_label.grid(row=row, column=2)
+        self.sigma_label.grid(row=row, column=2, sticky="w", padx=10)

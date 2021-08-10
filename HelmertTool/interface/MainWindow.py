@@ -87,7 +87,7 @@ class MainWindow(tk.Tk):
         self.from_file_selecter.grid(row=1, column=0, sticky="ew", pady=4, columnspan=6)
         self.to_file_selecter_label.grid(row=2, column=0, sticky="nw")
         self.to_file_selecter.grid(row=3, column=0, sticky="ew", pady=4, columnspan=6)
-        self.select_stations_button.grid(row=4, column=0, sticky = "e", pady=10)
+        self.select_stations_button.grid(row=4, column=0, sticky = "w", pady=10)
 
         #self.line1.grid(row=4, column=0, sticky="ew")
 
