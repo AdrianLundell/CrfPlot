@@ -22,26 +22,46 @@ def load_sta(fpath: str, epoch: float = 0):
     df = calculate_long_lat(df)
     return df
 
+
 def load_ssc(fpath: str):
     """Load a .ssc TRF file to a pandas dataframe"""
-    
-    column_names = ["Station_Name", "X", "Y", "Z", "X_sigma", "Y_sigma", "Z_sigma"]
-    column_specs = [(10, 26), (37,50), (50, 64), (64,77), (79,85), (86,92), (93,99)]
-    
-    df = pd.read_fwf(fpath, skiprows=7, header = None)
-    df = df.iloc[:, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]
-    df.columns = ["Domes", "Station_Name", "Tech", "Code", "X", "Y", "Z", "X_sigma", "Y_sigma", "Z_sigma", "Soln"]
-    if df.Code.dtype == float:
-        df.Code = df.Code.astype(str).str.zfill(4)
         
-    df.Soln = df.Soln.fillna(1)
-    
-    df = df.dropna()    
-    df = df.reset_index(drop=True)
-    df[["X", "X_sigma", "Y", "Y_sigma", "Z", "Z_sigma"]] = df[["X", "X_sigma", "Y", "Y_sigma", "Z", "Z_sigma"]].astype(np.float64)
+    column_names = ["Domes", "Station_Name", "Tech", "Code", "X", "Y", "Z", "X_sigma", "Y_sigma", "Z_sigma", "Soln"]
+    column_names_rate = ["Domes", "Station_Name", "Code", "X_v", "Y_v", "Z_v", "X_v_sigma", "Y_v_sigma", "Z_v_sigma", "Soln"]
+    if "2008" in fpath:
+        column_specs = [(0,9),(9,25),(25,31),(31,36),(36,49),(49,62),(62,75),(75,81),(81,87),(87,93),(95,96)]
+        column_specs_rate = [(0, 9), (9, 25),(31,36),(42, 49),(55, 62),(68, 75),(75, 81),(81, 87),(87,93), (95,96)]
+    elif "2014" in fpath:
+        column_specs = [(0, 9),(9, 25),(25, 31),(31, 36),(36, 50),(50, 64),(64, 78),(78, 85),(85, 92),(92, 99),(100, 102)]
+        column_specs_rate = [(0, 9),(9, 25),(31,36),(43, 50),(56, 64),(70, 78),(78, 85),(87,93),(93,99), (100,102)]
 
+    df = pd.read_fwf(fpath, skiprows=7, header=None, colspecs = column_specs, names = column_names)
+    df.Soln = df.Soln.fillna(1)
+    df = df.dropna()    
+
+    if df.Code.dtype == np.float64:
+        df.Code = df.Code.astype(int).astype(str)        
+    
+    df = df.reset_index(drop=True)
+    df = df.set_index(df.Domes.rename("index"))
+
+    df_rate = pd.read_fwf(fpath, skiprows=7, header = None, colspecs=column_specs_rate, names = column_names_rate)
+    df_rate.Soln = df_rate.Soln.fillna(method = "ffill", limit = 1)
+    df_rate.Soln = df_rate.Soln.fillna(1)
+    df_rate.Code = df_rate.Code.fillna(method = "ffill")
+    
+    df_rate = df_rate[df_rate.Station_Name.isna()]
+    df_rate = df_rate.drop(columns = "Station_Name")
+    df_rate = df_rate.reset_index(drop=True)
+    
+    if df_rate.Code.dtype == np.float64:
+        df_rate.Code = df_rate.Code.astype(int).astype(str)        
+    
+    df_rate = df_rate.set_index(df_rate.Domes.rename("index"))
+    
+    df = df.merge(df_rate, how="inner", on=["Domes", "Soln", "Code"])
     df = calculate_long_lat(df)
-    df = df.set_index(df.Station_Name)
+
     return df
 
 def calculate_long_lat(df: pd.DataFrame):
