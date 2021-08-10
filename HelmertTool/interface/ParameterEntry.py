@@ -37,7 +37,7 @@ class ParameterEntry(tk.Frame):
         self.entry.bind("<Tab>", self.set_from_internal)
         self.entry.bind("<FocusOut>", self.set_from_internal)
 
-        self.unit_label = ttk.Label(self, textvariable=self.unit_text_var, width=2)
+        self.unit_label = ttk.Label(self, textvariable=self.unit_text_var, width=4)
     
         self.edit_check.grid(row=0, column=0)
         self.entry.grid(row=0, column=1)

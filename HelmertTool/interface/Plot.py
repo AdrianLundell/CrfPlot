@@ -10,12 +10,13 @@ class Plot(tk.Frame):
     def __init__(self, master, subplot_rows, subplot_cols, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
 
-        self.fig, self.axes = plt.subplots(subplot_rows, subplot_cols, figsize=(7,7))
+        self.fig, self.axes = plt.subplots(subplot_rows, subplot_cols, figsize=(6,7.8))
+
         self.canvas = FigureCanvasTkAgg(self.fig, master=self)    
         self.toolbar = NavigationToolbar2Tk(self.canvas, self)
         
         self.toolbar.update()
-        self.canvas.get_tk_widget().pack(expand=True, fill='both')
+        self.canvas.get_tk_widget().pack(expand=True, fill='both', side = "top")
 
     def clear(self):
         """Clear all axes"""
@@ -28,3 +29,4 @@ class Plot(tk.Frame):
     def draw(self):
         """Show plot"""
         self.canvas.draw()
+    

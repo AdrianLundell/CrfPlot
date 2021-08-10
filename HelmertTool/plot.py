@@ -22,18 +22,19 @@ def plot_sites(df: pd.DataFrame, ax: plt.Axes):
 def plot_residuals(df, ax1, ax2):
     """Plots UEN-residuals scattered over a world map to axes"""
     worldmap.plot(color="lightgrey", ax=ax1)
-    #ax1.quiver(df_from.LAT, df_from.LONG, df_from.dE, df_from.dN, color="b")
-    q = ax1.quiver(df.LAT, df.LONG, df.dE, df.dN, color="k", scale=2)
-
-    ax1.quiverkey(q, 0.9,1.05,2*10**-1, "2e-1 m", color = "red")
-    ax1.set_title("NE-residual components")
-    ax1.grid()
-
     worldmap.plot(color="lightgrey", ax=ax2)
-    q = ax2.quiver(df.LAT, df.LONG, np.zeros(len(df.dU)), df.dU, scale=2)
-
+    ax1.set_title("NE-residual components")
     ax2.set_title("UP-residual component")
-    ax2.quiverkey(q, 0.9,1.05,2*10**-1, "2e-1 m", color = "red")
+
+    #ax1.quiver(df_from.LAT, df_from.LONG, df_from.dE, df_from.dN, color="b")
+    if not df is None:
+        q = ax1.quiver(df.LAT, df.LONG, df.dE, df.dN, color="k", scale=2)
+        ax1.quiverkey(q, 0.9,1.05, 10**-1, "10 cm", color = "red")
+
+        q = ax2.quiver(df.LAT, df.LONG, np.zeros(len(df.dU)), df.dU, scale=2)
+        ax2.quiverkey(q, 0.9,1.05, 10**-1, "10 cm", color = "red")
+    
+    ax1.grid()
     ax2.grid()
 
 def plot_residuals_hist(df_from, df_transformed, ax1, ax2):

@@ -15,37 +15,37 @@ class ParameterView(tk.Frame):
         self.entry_dict["scale_y"].master_parameter = parameters["scale_x"]
         self.entry_dict["scale_z"].master_parameter = parameters["scale_x"]
 
-        ttk.Label(self, text = "Translation").grid(row=0, column=0)
+        ttk.Label(self, text = "Translation").grid(row=0, column=0, pady=5)
         for i, name in enumerate(self.state.parameters.translation_names,1):
-            self.entry_dict[name].set_unit(meter)
+            self.entry_dict[name].set_unit(milli_meter)
             self.entry_dict[name].grid(row = i, column = 0)
 
-        ttk.Label(self, text = "Scale").grid(row=0, column=1)
+        ttk.Label(self, text = "Scale").grid(row=0, column=1, pady=5)
         for i, name in enumerate(self.state.parameters.scale_names,1):
-            self.entry_dict[name].set_unit(milli_meter)
+            self.entry_dict[name].set_unit(milli)
             self.entry_dict[name].grid(row = i, column = 1)
 
-        ttk.Label(self, text = "Rotation").grid(row=0, column=2)
+        ttk.Label(self, text = "Rotation").grid(row=0, column=2, pady=5)
         for i, name in enumerate(self.state.parameters.rotation_names,1):
             self.entry_dict[name].set_unit(nano_radian)
             self.entry_dict[name].grid(row = i, column = 2)
 
         self.scale_type_change()
-        ttk.Checkbutton(self, variable=self.state.display.scale_unit, onvalue="mm", offvalue="cm").grid(row=4, column=1)
-        ttk.Checkbutton(self, variable=self.state.display.rotation_unit, onvalue="si", offvalue="classic").grid(row=4, column=2)
+        ttk.Checkbutton(self, variable=self.state.display.scale_unit, onvalue="micro", offvalue="milli", text="Change scale").grid(row=4, column=1, pady=7)
+        ttk.Checkbutton(self, variable=self.state.display.rotation_unit, onvalue="classic", offvalue="si", text="Change scale").grid(row=4, column=2, pady=7)
 
         self.state.display.scale_unit.trace_add("write", self.scale_unit_change)
         self.state.display.rotation_unit.trace_add("write", self.rotation_unit_change)
 
     def scale_unit_change(self, *args):
-        if self.state.display.scale_unit.get() == "mm":
-            self.entry_dict["scale_x"].set_unit(milli_meter)
-            self.entry_dict["scale_y"].set_unit(milli_meter)
-            self.entry_dict["scale_z"].set_unit(milli_meter)
-        elif self.state.display.scale_unit.get() == "cm":
-            self.entry_dict["scale_x"].set_unit(centi_meter)
-            self.entry_dict["scale_y"].set_unit(centi_meter)
-            self.entry_dict["scale_z"].set_unit(centi_meter)
+        if self.state.display.scale_unit.get() == "milli":
+            self.entry_dict["scale_x"].set_unit(milli)
+            self.entry_dict["scale_y"].set_unit(milli)
+            self.entry_dict["scale_z"].set_unit(milli)
+        elif self.state.display.scale_unit.get() == "micro":
+            self.entry_dict["scale_x"].set_unit(micro)
+            self.entry_dict["scale_y"].set_unit(micro)
+            self.entry_dict["scale_z"].set_unit(micro)
 
     def rotation_unit_change(self, *args):
         if self.state.display.rotation_unit.get() == "si":

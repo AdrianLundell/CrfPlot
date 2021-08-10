@@ -1,3 +1,4 @@
+from ctypes import resize
 import tkinter as tk 
 import tkinter.ttk as ttk
 import pandas as pd 
@@ -21,6 +22,10 @@ class MainWindow(tk.Tk):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
+        #Misc configuration
+        self.title("Helmert Tool")
+        design_mode = False  
 
         #Data
         self.df_from = None
@@ -31,7 +36,7 @@ class MainWindow(tk.Tk):
         self.state = InterfaceState(self)
 
         #Tkinter widgets
-        self.title_label = tk.Label(self, text = "HelmertTool", font="bold")
+        self.title_label = tk.Label(self, text = "Helmert Tool", font=("Helvetica", 16))
 
         self.data_frame = tk.Frame(self)
         self.from_file_selecter_label = ttk.Label(self.data_frame, text="Transform from:")
@@ -51,7 +56,7 @@ class MainWindow(tk.Tk):
         self.transform_button = ttk.Button(self.data_frame, text = "Transform", state = "disable")
         self.reset_button = ttk.Button(self.data_frame, text = "Reset parameters")
         
-        self.line2 = ttk.Separator(self, orient = "horizontal")
+        #self.line2 = ttk.Separator(self, orient = "horizontal")
 
         self.parameter_frame = tk.Frame(self)
         self.parameter_view = ParameterView(self.parameter_frame)
@@ -61,27 +66,28 @@ class MainWindow(tk.Tk):
         self.wrms_label = ttk.Label(self.parameter_frame, text = "Weighted root mean squared: ")
         self.wrms_value = ttk.Label(self.parameter_frame, textvariable=self.state.transform.weighted_root_mean_squared)
 
-        self.line3 = ttk.Separator(self, orient = "vertical")
-
         self.plot_frame = tk.Frame(self)
         self.plot = Plot(self.plot_frame, 2, 1)        
+        #self.plot.fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.1, hspace=0.1)
+        self.plot.fig.tight_layout(pad=1)
 
         #Place Tkinter widgets
+
         self.rowconfigure(0, weight=0)
+        self.rowconfigure(1, weight=0)
         self.rowconfigure(2, weight=1)
-        self.rowconfigure(4, weight=0)
-        self.rowconfigure(6, weight=1)
-        self.rowconfigure(8, weight=0)
-        self.rowconfigure(10, weight=1)
 
-        self.title_label.grid(row = 0, column=0, sticky="w", padx=10, pady=10)
+        self.columnconfigure(0, weight = 0)
+        self.columnconfigure(1, weight = 1)
 
-        self.data_frame.grid(row=2, column=0, padx=10, pady=10)
-        self.from_file_selecter_label.grid(row=0, column=0, sticky="w")
+        self.title_label.grid(row = 0, column=0, sticky="w", padx=30, pady=20)
+
+        self.data_frame.grid(row=1, column=0, padx=30, sticky = "news")
+        self.from_file_selecter_label.grid(row=0, column=0, sticky="nw")
         self.from_file_selecter.grid(row=1, column=0, sticky="ew", pady=4, columnspan=6)
-        self.to_file_selecter_label.grid(row=2, column=0, sticky="w")
+        self.to_file_selecter_label.grid(row=2, column=0, sticky="nw")
         self.to_file_selecter.grid(row=3, column=0, sticky="ew", pady=4, columnspan=6)
-        self.select_stations_button.grid(row=4, column=0, sticky = "w", pady=10)
+        self.select_stations_button.grid(row=4, column=0, sticky = "e", pady=10)
 
         #self.line1.grid(row=4, column=0, sticky="ew")
 
@@ -90,23 +96,22 @@ class MainWindow(tk.Tk):
         self.weighted_button.grid(row=6, column=0)
         self.transform_type_combo_label.grid(row=5, column=1)
         self.transform_type_combo.grid(row=6, column=1)
-        self.calculate_button.grid(row=6, column=2)
-        self.transform_button.grid(row=6, column=3)
-        self.reset_button.grid(row=6, column=4)
+        self.calculate_button.grid(row=6, column=2, sticky="w")
+        self.transform_button.grid(row=6, column=3, sticky="ew")
+        self.reset_button.grid(row=6, column=4, sticky="e")
 
-        self.line2.grid(row=8, column=0, sticky="ew")
+        #self.line2.grid(row=8, column=0, sticky="ew")
 
-        self.parameter_frame.grid(row=10, column=0, padx=10, pady=10)
-        self.parameter_view.grid(row=0, column=0, columnspan=4, pady=10)
-        self.chi2_label.grid(row=1, column=0)
-        self.chi_2_value.grid(row=1, column=1)
-        self.wrms_label.grid(row=1, column=2)
-        self.wrms_value.grid(row=1, column=3)
+        self.parameter_frame.grid(row=2, column=0, padx=30, pady=50, sticky="news")
+        self.parameter_view.grid(row=0, column=0, columnspan=4, pady=10, sticky="ew")
+        self.chi2_label.grid(row=1, column=0, sticky="n")
+        self.chi_2_value.grid(row=1, column=1, sticky="n")
+        self.wrms_label.grid(row=1, column=2, sticky="n")
+        self.wrms_value.grid(row=1, column=3, sticky="n")
 
-        self.line3.grid(row=0, column=1, rowspan=11)
-
-        self.plot_frame.grid(row=0, column=2, rowspan=11)
-        self.plot.pack()
+        self.plot_frame.grid(row=0, column=1, rowspan=3, sticky="news")
+        self.plot.pack(expand=True, fill='both')
+        self.update_plot()
         
         #Bind actions
         self.state.transform.from_file_path.trace_add("write", self.df_from_change)
@@ -118,6 +123,11 @@ class MainWindow(tk.Tk):
         self.calculate_button.config(command = self.calculate_parameters)
         self.transform_button.config(command = self.update_transform)
         self.reset_button.config(command = self.reset_parameters)
+
+        if design_mode:
+            self.title_label.config(background="red")
+            self.parameter_frame.config(background="blue")
+            self.data_frame.config(background="red")
 
     def select_stations(self, *args):
         """Open station selection window"""
@@ -189,12 +199,18 @@ class MainWindow(tk.Tk):
 
     def update_plot(self, *args):
         self.plot.clear()
-        transformed = self.transformed[self.stations.Selected]
+        if not self.transformed is None:
+            transformed = self.transformed[self.stations.Selected]
+        else:
+            transformed = None
         plot_residuals(transformed, self.plot.axes[0], self.plot.axes[1])
         self.plot.draw()
 
     def update_statistics(self):
-        standared_errors = self.df_from.X_sigma**2 + self.df_from.Y_sigma**2 + self.df_from.Z_sigma**2 + self.df_to.X_sigma**2 + self.df_to.Y_sigma**2 + self.df_to.Z_sigma**2
+        df_from = self.df_from[self.stations.Selected]
+        df_to = self.df_to[self.stations.Selected]
+        
+        standared_errors = df_from.X_sigma**2 + df_from.Y_sigma**2 + df_from.Z_sigma**2 + df_to.X_sigma**2 + df_to.Y_sigma**2 + df_to.Z_sigma**2
         value = sum(self.transformed.dX ** 2 / standared_errors)
         
         self.state.transform.chi_squared.set(self.value_to_string(value))
