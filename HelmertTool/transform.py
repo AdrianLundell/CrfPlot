@@ -73,10 +73,6 @@ def get_design_columns(df: pd.DataFrame):
     "rotation_y" : np.hstack((df.Z, zero, -df.X)),
     "rotation_z" : np.hstack((-df.Y, df.X, zero))}
         
-    # design_matrix_x = np.vstack((one, zero, zero, df.X, zero, zero, zero, df.Z, -df.Y))
-    # design_matrix_y = np.vstack((zero, one, zero, zero, df.Y, zero, -df.Z, zero, df.X))
-    # design_matrix_z = np.vstack((zero, zero, one, zero, zero, df.Z, df.Y, -df.X, zero))
-
     return result
 
 def get_var_matrix(df_from: pd.DataFrame, df_to: pd.DataFrame):
@@ -85,26 +81,13 @@ def get_var_matrix(df_from: pd.DataFrame, df_to: pd.DataFrame):
     var2 = df_from.Y_sigma**2 + df_to.Y_sigma**2 
     var3 = df_from.Z_sigma**2 + df_to.Z_sigma**2 
     var = np.hstack([var1, var2, var3])
+
+    # var = np.sqrt(df_from.X_sigma**2 + df_to.X_sigma**2 + df_from.Y_sigma**2 + df_to.Y_sigma**2 + df_from.Z_sigma**2 + df_to.Z_sigma**2) 
+    # var = np.hstack([var, var, var])
+
     weight_matrix = np.diag(var)
     
-    #var = df_from.X_sigma**2 + df_to.X_sigma**2 + df_from.Y_sigma**2 + df_to.Y_sigma**2 + df_from.Z_sigma**2 + df_to.Z_sigma**2
-    #weight_matrix = np.diag(np.tile(var, 3))
-
     return weight_matrix
-
-def fix_parameters(parameters, design_matrix, observation_matrix):
-    """"""
-    save = []
-    
-    for i, par in enumerate(parameters.get()):
-        if par.is_custom.get():
-            observation_matrix = observation_matrix - design_matrix[:, i] * par.value.get()
-        else:
-            save.append(i)
-
-    design_matrix = design_matrix[:, save]
-
-    return design_matrix, observation_matrix
 
 def helmert_transform(df: pd.DataFrame, parameters):
     """Returns a new dataframe with coordinates transformed according tp the helmert infinitecimal form"""
@@ -146,13 +129,39 @@ def decompose_residuals(df):
     df["dU"] = np.cos(LAT)*np.cos(LONG)*df.dX + \
                 np.cos(LAT)*np.sin(LONG)*df.dY + \
                 np.sin(LAT)*df.dZ
-    df["dE"] = np.sin(LONG)*df.dX + \
-                -np.cos(LONG)*df.dY + \
+    df["dE"] = -np.sin(LONG)*df.dX + \
+                np.cos(LONG)*df.dY + \
              0
-    df["dN"] = np.sin(LAT)*np.cos(LONG)*df.dX + \
-               np.sin(LAT)*np.sin(LONG)*df.dY + \
-               (-np.cos(LAT)*np.cos(LONG)*np.cos(LONG)-np.cos(LAT)*np.sin(LONG)*np.sin(LONG))*df.dZ
+    df["dN"] = -np.sin(LAT)*np.cos(LONG)*df.dX + \
+               -np.sin(LAT)*np.sin(LONG)*df.dY + \
+               -(-np.cos(LAT)*np.cos(LONG)*np.cos(LONG)-np.cos(LAT)*np.sin(LONG)*np.sin(LONG))*df.dZ
     
     return df
 
 
+def to_string(df_from, df_to, df_transformed, parameters, sigmas):
+
+    transformation = [name for name in sigmas.keys()]
+    values = [parameters[name] for name in sigmas.keys()]
+    sigmas = [sigmas[name] for name in sigmas.keys()]
+    parameter_df = pd.DataFrame({"transformation" : transformation, "values" : values, "sigmas" : sigmas})
+
+    frame_df = df_from.merge(df_to, left_index=True, right_index=True, suffixes=("1", "2"))
+    frame_df = frame_df.merge(df_transformed, left_index=True, right_index=True, suffixes=("", "3"))
+
+    
+    frame_df = frame_df[["Station_Name1", "X1", "X_sigma1", "Y1", "Y_sigma1", "Z1", "Z_sigma1", "X2", "X_sigma2", "Y2", "Y_sigma2", "Z2", "Z_sigma2", "X", "Y", "Z"]]
+    frame_df.columns = ["Station_Name", "X_frame1", "X_sigma_frame1", "Y1_frame1", "Y_sigma_frame1", "Z_frame1", "Z_sigma_frame1", "X_frame2", "X_sigma_frame2", "Y_frame2", "Y_sigma_frame2", "Z_frame2", "Z_sigma_frame2", "X_transformed", "Y_tranformed", "Z_transfomed"]
+
+    string = f"""Begin Transform
+{parameter_df.to_string(index=False)}
+
+End Transform
+---
+Begin Frame
+{frame_df.to_string(index=False)}
+
+End Frame
+    """ 
+
+    return string

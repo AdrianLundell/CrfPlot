@@ -1,6 +1,7 @@
 import geopandas as gpd
 import pandas as pd 
 import numpy as np
+import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 
 worldmap = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
@@ -23,15 +24,19 @@ def plot_residuals(df, ax1, ax2):
     """Plots UEN-residuals scattered over a world map to axes"""
     worldmap.plot(color="lightgrey", ax=ax1)
     worldmap.plot(color="lightgrey", ax=ax2)
+
+    #img = mpimg.imread('C:/Users/Adrian/Documents/NVI/map.png')
+    #ax1.imshow(img, )
+    #ax2.imshow(img)
     ax1.set_title("NE-residual components")
     ax2.set_title("UP-residual component")
 
     #ax1.quiver(df_from.LAT, df_from.LONG, df_from.dE, df_from.dN, color="b")
     if not df is None:
-        q = ax1.quiver(df.LAT, df.LONG, df.dE, df.dN, color="k", scale=2)
+        q = ax1.quiver(df.LONG, df.LAT, df.dE, df.dN, color="k", scale=2)
         ax1.quiverkey(q, 0.9,1.05, 10**-1, "10 cm", color = "red")
 
-        q = ax2.quiver(df.LAT, df.LONG, np.zeros(len(df.dU)), df.dU, scale=2)
+        q = ax2.quiver(df.LONG, df.LAT, np.zeros(len(df.dU)), df.dU, scale=2)
         ax2.quiverkey(q, 0.9,1.05, 10**-1, "10 cm", color = "red")
     
     ax1.grid()

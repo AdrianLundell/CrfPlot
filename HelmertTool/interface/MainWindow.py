@@ -1,4 +1,5 @@
 from ctypes import resize
+from locale import normalize
 import tkinter as tk 
 import tkinter.ttk as ttk
 import pandas as pd 
@@ -14,6 +15,7 @@ from ..load import load_sta
 
 from ..plot import plot_residuals
 from ..transform import *
+
 
 class MainWindow(tk.Tk):
     """Main application class for the helmert transfrom interface"""
@@ -45,7 +47,6 @@ class MainWindow(tk.Tk):
         self.to_file_selecter = FileSelecter(self.data_frame, self.state.transform.to_file_path, self.state.transform.to_epoch, self.file_formats)
         self.select_stations_button = ttk.Button(self.data_frame, text="Select stations", state = "disable")
         
-        #self.line1 = ttk.Separator(self, orient = "horizontal")
 
         #self.config_frame = tk.Frame(self)
         self.weighted_button_label = ttk.Label(self.data_frame, text="Weighted")
@@ -55,7 +56,6 @@ class MainWindow(tk.Tk):
         self.calculate_button = ttk.Button(self.data_frame, text = "Calculate parameter", state = "disable")
         self.transform_button = ttk.Button(self.data_frame, text = "Transform", state = "disable")
         self.reset_button = ttk.Button(self.data_frame, text = "Reset parameters")
-        
         #self.line2 = ttk.Separator(self, orient = "horizontal")
 
         self.parameter_frame = tk.Frame(self)
@@ -65,6 +65,8 @@ class MainWindow(tk.Tk):
         self.chi_2_value = ttk.Label(self.parameter_frame, textvariable = self.state.transform.chi_squared) 
         self.wrms_label = ttk.Label(self.parameter_frame, text = "Weighted root mean squared: ")
         self.wrms_value = ttk.Label(self.parameter_frame, textvariable=self.state.transform.weighted_root_mean_squared)
+
+        self.export_button = ttk.Button(self.parameter_frame, text="Export", state = "disable") 
 
         self.plot_frame = tk.Frame(self)
         self.plot = Plot(self.plot_frame, 2, 1)        
@@ -99,7 +101,6 @@ class MainWindow(tk.Tk):
         self.calculate_button.grid(row=6, column=2, sticky="w")
         self.transform_button.grid(row=6, column=3, sticky="ew")
         self.reset_button.grid(row=6, column=4, sticky="e")
-
         #self.line2.grid(row=8, column=0, sticky="ew")
 
         self.parameter_frame.grid(row=2, column=0, padx=30, pady=50, sticky="news")
@@ -108,6 +109,8 @@ class MainWindow(tk.Tk):
         self.chi_2_value.grid(row=1, column=1, sticky="n")
         self.wrms_label.grid(row=1, column=2, sticky="n")
         self.wrms_value.grid(row=1, column=3, sticky="n")
+
+        self.export_button.grid(row=2, column=0, columnspan=4, pady=40)
 
         self.plot_frame.grid(row=0, column=1, rowspan=3, sticky="news")
         self.plot.pack(expand=True, fill='both')
@@ -123,6 +126,7 @@ class MainWindow(tk.Tk):
         self.calculate_button.config(command = self.calculate_parameters)
         self.transform_button.config(command = self.update_transform)
         self.reset_button.config(command = self.reset_parameters)
+        self.export_button.config(command = self.export_data)
 
         if design_mode:
             self.title_label.config(background="red")
@@ -159,6 +163,7 @@ class MainWindow(tk.Tk):
             self.select_stations_button.config(state = "normal")
             self.transform_button.config(state = "normal")
             self.calculate_button.config(state = "normal")
+            self.export_button.config(state = "normal")
 
     def calculate_parameters(self, *args):
         
@@ -200,21 +205,61 @@ class MainWindow(tk.Tk):
     def update_plot(self, *args):
         self.plot.clear()
         if not self.transformed is None:
-            transformed = self.transformed[self.stations.Selected]
+            transformed = self.transformed#[self.stations.Selected]
         else:
             transformed = None
         plot_residuals(transformed, self.plot.axes[0], self.plot.axes[1])
         self.plot.draw()
 
+    def export_data(self, *args):
+        f = tk.filedialog.asksaveasfile(mode='w', defaultextension=".txt")
+        if f is None: # asksaveasfile return `None` if dialog closed with "cancel".
+            return
+
+        string = self.to_string()
+        f.write(string)
+        f.close()
+
+    def to_string(self):
+
+        transformation = [key for key in self.state.parameters.values.keys()]
+        values = [var.get() for var in self.state.parameters.values.values()]
+        sigmas = [var.get() for var in self.state.parameters.sigmas.values()]
+        parameter_df = pd.DataFrame({"transformation" : transformation, "values" : values, "sigmas" : sigmas})
+
+        frame_df = self.df_from.merge(self.df_to, left_index=True, right_index=True, suffixes=("_Frame1", "_Frame2"))
+        frame_df = frame_df.drop(columns = ["Station_Name_Frame1", "Date_Frame1", "Station_Name_Frame2", "Date_Frame2", "LAT_Frame2", "LONG_Frame2", ])
+        if not self.transformed is None:
+            frame_df = frame_df.merge(self.transformed, left_index=True, right_index=True, suffixes=("", "_Transformed"))
+
+        string = f"""Begin Transform
+{parameter_df.to_string(index=False)}
+
+End Transform
+---
+Begin Frame
+{frame_df.to_string(index=False)}
+
+End Frame
+        """ 
+
+        return string
+
     def update_statistics(self):
         df_from = self.df_from[self.stations.Selected]
         df_to = self.df_to[self.stations.Selected]
         
-        standared_errors = df_from.X_sigma**2 + df_from.Y_sigma**2 + df_from.Z_sigma**2 + df_to.X_sigma**2 + df_to.Y_sigma**2 + df_to.Z_sigma**2
-        value = sum(self.transformed.dX ** 2 / standared_errors)
+        weighted_sum = sum(self.transformed.dX ** 2 / (df_from.X_sigma**2 + df_to.X_sigma**2) + self.transformed.dY ** 2 / (df_from.Y_sigma**2 + df_to.Y_sigma**2) + self.transformed.dZ ** 2 / (df_from.Z_sigma**2 + df_to.Z_sigma**2))
+        normalize_constant = sum(1 / (df_from.X_sigma**2 + df_to.X_sigma**2) + 1 / (df_from.Y_sigma**2 + df_to.Y_sigma**2) + 1 / (df_from.Z_sigma**2 + df_to.Z_sigma**2))
         
-        self.state.transform.chi_squared.set(self.value_to_string(value))
-        self.state.transform.weighted_root_mean_squared.set(self.value_to_string(value/sum(1/standared_errors)))
+        deg_of_freedom = 3*len(df_from.index) - float(self.state.transform.type.get())
+        
+        #TESTING PURPOSES
+        # weighted_sum = sum(self.transformed.dX ** 2 / (df_from.X_sigma**2 + df_to.X_sigma**2))
+        # deg_of_freedom = 1 
+
+        self.state.transform.chi_squared.set(self.value_to_string(weighted_sum/deg_of_freedom))
+        self.state.transform.weighted_root_mean_squared.set(self.value_to_string(weighted_sum/normalize_constant))
 
     def reset_parameters(self, *args):
         """Reset all parameter values to zero"""

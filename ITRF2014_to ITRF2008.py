@@ -46,7 +46,7 @@ df_to = df_to.set_index(df_to.Domes.rename("index"))
 df_to = df_to.sort_index()
 
 #Propagate the data from 2008 to match the epoch of the 2014 data
-df_to.X = df_to.X + 5*df_to.X_v
+df_to.X = df_to.X + 5*df_to.X_v 
 df_to.Y = df_to.Y + 5*df_to.Y_v 
 df_to.Z = df_to.Z + 5*df_to.Z_v 
 
@@ -54,6 +54,7 @@ df_to.Z = df_to.Z + 5*df_to.Z_v
 #Parameters : 1.6[mm],	1.9[mm], 2.4[mm], -0.02[ppb],  0.000[mas],  0.000[mas],  0.000[mas]
 #Sigmas     : 0.2[mm],  0.1[mm], 0.1[mm],  0.02[ppb],  0.006[mas],  0.006[mas],  0.006[mas]
 
-params, sigmas = calculate_parameters(df_from, df_to, weighted = False, type = "7")
+params, sigmas = calculate_parameters(df_from, df_to, weighted = True, type = "7")
 print(params)
 print(sigmas)
+

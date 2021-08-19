@@ -22,7 +22,6 @@ def load_sta(fpath: str, epoch: float = 0):
     df = calculate_long_lat(df)
     return df
 
-
 def load_ssc(fpath: str):
     """Load a .ssc TRF file to a pandas dataframe"""
         
@@ -67,8 +66,8 @@ def load_ssc(fpath: str):
 def calculate_long_lat(df: pd.DataFrame):
     """Add columns with LONG/LAT cooridnates to df derived from XYZ coordinates from df"""
 
-    df["LONG"] = np.degrees(np.arcsin(df.Z/(6371*10**3)))
-    df["LAT"] = np.degrees(np.arctan2(df.Y, df.X))
+    df["LAT"] = np.degrees(np.arcsin(df.Z/np.sqrt(df.X**2 + df.Y**2 + df.Z**2)))
+    df["LONG"] = np.degrees(np.arctan2(df.Y, df.X))
 
     return df
 
