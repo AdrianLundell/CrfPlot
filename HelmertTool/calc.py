@@ -1,8 +1,7 @@
 import pandas as pd
 import numpy as np 
 
-from HelmertTool.load import calculate_long_lat
-from HelmertTool.regression import ordinary_least_squares, weighted_least_squares
+from HelmertTool.io import calculate_long_lat
 from HelmertTool.interface.InterfaceState import InterfaceState
 
 def calculate_parameters(df_from: pd.DataFrame, df_to: pd.DataFrame, weighted: bool, type: str, custom_dict : dict = None):
@@ -165,3 +164,21 @@ End Frame
     """ 
 
     return string
+
+
+def ordinary_least_squares(design_matrix, observation_matrix, parameter_names = None):
+    """Ordinary least squares fit"""
+    parameters = np.linalg.inv(design_matrix.T @ design_matrix) @ design_matrix.T @ observation_matrix
+
+    return parameters
+
+def weighted_least_squares(design_matrix, observation_matrix, observation_var_matrix, parameter_names = None):
+    """Weighted least squares fit under the assumption of uncorrelated measurement errors"""
+    weight_matrix = np.linalg.inv(observation_var_matrix)
+
+    parameter_uncertainties = np.linalg.inv(design_matrix.T @ weight_matrix @ design_matrix)
+    parameters = parameter_uncertainties @ design_matrix.T @ weight_matrix @ observation_matrix
+    parameter_uncertainties = np.sqrt(np.diag(parameter_uncertainties))
+
+    return parameters, parameter_uncertainties
+

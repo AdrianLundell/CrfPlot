@@ -1,5 +1,3 @@
-from ctypes import resize
-from locale import normalize
 import tkinter as tk 
 import tkinter.ttk as ttk
 import pandas as pd 
@@ -11,10 +9,10 @@ from .Plot import Plot
 from .SelectStations import SelectStationsWindow 
 
 from .InterfaceState import InterfaceState
-from ..load import load_sta
+from ..io import load_sta
 
-from ..plot import plot_residuals
-from ..transform import *
+from ..visualise import plot_residuals
+from ..calc import *
 
 
 class MainWindow(tk.Tk):

@@ -1,6 +1,6 @@
 #%%
-from HelmertTool.transform import * 
-from HelmertTool.load import load_sta
+from HelmertTool.calc import * 
+from HelmertTool.io import load_sta
 from HelmertTool.units import *
 
 #%% Simplest case 
@@ -33,8 +33,9 @@ custom_dictionary = {"translation_x" : None,
 parameters, sigmas = calculate_parameters(frame_from, frame_to, weighted=True, type = "7", custom_dict=custom_dictionary)
 print(parameters)
 
-#%% Custom transform 
-custom_dictionary = {"translation_x" : 0.01,
+#%% Custom transform
+#TODO:Comment units 
+custom_dictionary = {"translation_x" : 0.01, 
                     "translation_y" : 0.01, 
                     "translation_z" : 0.01,
                     "scale_x" : 0, 
