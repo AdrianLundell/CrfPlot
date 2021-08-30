@@ -34,7 +34,7 @@ parameters, sigmas = calculate_parameters(frame_from, frame_to, weighted=True, t
 print(parameters)
 
 #%% Custom transform
-#TODO:Comment units 
+#TODO:Comment units!!! 
 custom_dictionary = {"translation_x" : 0.01, 
                     "translation_y" : 0.01, 
                     "translation_z" : 0.01,
