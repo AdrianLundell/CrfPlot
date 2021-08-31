@@ -8,7 +8,7 @@ worldmap = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
 
 def plot_sites3D(df: pd.DataFrame):
     fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
+    ax = fig.add_subppytholot(projection='3d')
     ax.scatter3D(df.X, df.Y, df.Z)
     plt.show()
 
