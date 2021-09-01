@@ -38,7 +38,7 @@ class FileSelecter(tk.Frame):
         """Geometry management"""
         self.file_entry.grid(row=0, column=0, sticky="EW")
         self.file_button.grid(row=0, column=1, sticky="W", padx=10)
-        self.epoch_entry.grid(row=0, column=2, sticky="EW")
+        #self.epoch_entry.grid(row=0, column=2, sticky="EW")
         
         self.columnconfigure(0, weight=1)
 

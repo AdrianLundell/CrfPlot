@@ -18,10 +18,11 @@ frame_transformed = helmert_transform(frame_from, parameters)
 frame_transformed = calculate_residuals(frame_transformed, frame_to)
 frame_transformed = decompose_residuals(frame_transformed)
 
-#Format data as as a string, print and save
+#Format data as as a string, print
 string = to_string(frame_from, frame_to, frame_transformed, parameters, sigmas)
 print(string)
 
+#Syntax to save a file
 with open("test_1.txt", "w") as f:
     f.write(string)
 

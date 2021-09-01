@@ -14,7 +14,7 @@ nano = Unit("e-9", 10**9)
 micro = Unit("e-6", 10**6)
 milli = Unit("e-3", 10**3)
 centi = Unit("e-2", 10**2)
-one = Unit("e0", 1)
+one = Unit("", 1)
 
 #Angles
 nano_radian = Unit("nrad", 10**9)

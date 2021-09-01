@@ -1,5 +1,6 @@
 import pandas as pd 
 import numpy as np
+import os 
 
 def load_sta(fpath: str, epoch: float = 0):
     """Load a .sta TRF file to a pandas dataframe"""
@@ -77,3 +78,44 @@ def timestamp_to_year(timestamp):
     year = (jd - jd2000)/365.25 + 2000
 
     return year
+
+def get_path(file_name):
+    """Checks for the specified file. If it exists in the current working directory it returns that path, else the default path"""
+    default_path, _ = os.path.split(__file__)
+    default_file = os.path.join(default_path, "resources", file_name)
+
+    working_path = os.getcwd()
+    working_file = os.path.join(working_path, file_name)
+
+    if os.path.exists(working_file):
+        return working_file
+    else:
+        return default_file 
+
+
+def to_string(df_from, df_to, df_transformed, parameters, sigmas):
+
+    transformation = [name for name in sigmas.keys()]
+    values = [parameters[name] for name in sigmas.keys()]
+    sigmas = [sigmas[name] for name in sigmas.keys()]
+    parameter_df = pd.DataFrame({"transformation" : transformation, "values" : values, "sigmas" : sigmas})
+
+    frame_df = df_from.merge(df_to, left_index=True, right_index=True, suffixes=("1", "2"))
+    frame_df = frame_df.merge(df_transformed, left_index=True, right_index=True, suffixes=("", "3"))
+
+    
+    frame_df = frame_df[["Station_Name1", "X1", "X_sigma1", "Y1", "Y_sigma1", "Z1", "Z_sigma1", "X2", "X_sigma2", "Y2", "Y_sigma2", "Z2", "Z_sigma2", "X", "Y", "Z"]]
+    frame_df.columns = ["Station_Name", "X_frame1", "X_sigma_frame1", "Y1_frame1", "Y_sigma_frame1", "Z_frame1", "Z_sigma_frame1", "X_frame2", "X_sigma_frame2", "Y_frame2", "Y_sigma_frame2", "Z_frame2", "Z_sigma_frame2", "X_transformed", "Y_tranformed", "Z_transfomed"]
+
+    string = f"""Begin Transform
+{parameter_df.to_string(index=False)}
+
+End Transform
+---
+Begin Frame
+{frame_df.to_string(index=False)}
+
+End Frame
+    """ 
+
+    return string

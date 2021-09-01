@@ -111,7 +111,6 @@ def helmert_transform(df: pd.DataFrame, parameters):
 
     return transformed_df
 
-#RESIDUAL HANDLING FUNCTIONS-------------------------------------------------------------------------------------------------
 def calculate_residuals(df_from: pd.DataFrame, df_to: pd.DataFrame):
     """Returns the from dataframe with computed residuals"""
     df_from["dX"] = df_from.X-df_to.X
@@ -136,35 +135,6 @@ def decompose_residuals(df):
                -(-np.cos(LAT)*np.cos(LONG)*np.cos(LONG)-np.cos(LAT)*np.sin(LONG)*np.sin(LONG))*df.dZ
     
     return df
-
-
-def to_string(df_from, df_to, df_transformed, parameters, sigmas):
-
-    transformation = [name for name in sigmas.keys()]
-    values = [parameters[name] for name in sigmas.keys()]
-    sigmas = [sigmas[name] for name in sigmas.keys()]
-    parameter_df = pd.DataFrame({"transformation" : transformation, "values" : values, "sigmas" : sigmas})
-
-    frame_df = df_from.merge(df_to, left_index=True, right_index=True, suffixes=("1", "2"))
-    frame_df = frame_df.merge(df_transformed, left_index=True, right_index=True, suffixes=("", "3"))
-
-    
-    frame_df = frame_df[["Station_Name1", "X1", "X_sigma1", "Y1", "Y_sigma1", "Z1", "Z_sigma1", "X2", "X_sigma2", "Y2", "Y_sigma2", "Z2", "Z_sigma2", "X", "Y", "Z"]]
-    frame_df.columns = ["Station_Name", "X_frame1", "X_sigma_frame1", "Y1_frame1", "Y_sigma_frame1", "Z_frame1", "Z_sigma_frame1", "X_frame2", "X_sigma_frame2", "Y_frame2", "Y_sigma_frame2", "Z_frame2", "Z_sigma_frame2", "X_transformed", "Y_tranformed", "Z_transfomed"]
-
-    string = f"""Begin Transform
-{parameter_df.to_string(index=False)}
-
-End Transform
----
-Begin Frame
-{frame_df.to_string(index=False)}
-
-End Frame
-    """ 
-
-    return string
-
 
 def ordinary_least_squares(design_matrix, observation_matrix, parameter_names = None):
     """Ordinary least squares fit"""

@@ -1,7 +1,7 @@
 import tkinter as tk 
 import pandas as pd 
 import tkinter.ttk as ttk 
-
+from HelmertTool.io import get_path
 class SelectStationsWindow(tk.Tk):
     
     def __init__(self, master, *args, **kwargs):
@@ -112,7 +112,7 @@ class SelectStationsWindow(tk.Tk):
             self.use_default_stations = True
 
     def load_default_stations(self):
-        return pd.read_fwf("C:/Users/Adrian/Documents/NVI/HelmertTool/data/transform_sites.txt", header = None)
+        return pd.read_fwf(get_path("transform_sites.txt"), header = None)
 
 class SelectStationsRow():
 

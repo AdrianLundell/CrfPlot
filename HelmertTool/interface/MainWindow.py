@@ -2,6 +2,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import pandas as pd 
 import numpy as np 
+import sys 
 
 from .FileSelecter import FileSelecter
 from .ParameterView import ParameterView
@@ -25,7 +26,7 @@ class MainWindow(tk.Tk):
         
         #Misc configuration
         self.title("Helmert Tool")
-        design_mode = False  
+        self.protocol("WM_DELETE_WINDOW", self.exit)
 
         #Data
         self.df_from = None
@@ -51,8 +52,8 @@ class MainWindow(tk.Tk):
         self.weighted_button = ttk.Checkbutton(self.data_frame, variable=self.state.transform.weighted, onvalue=True, offvalue=False)
         self.transform_type_combo_label = ttk.Label(self.data_frame, text="N parameters")
         self.transform_type_combo = ttk.Combobox(self.data_frame, textvariable=self.state.transform.type, values = ['7', '8', '9'], width=3)
-        self.calculate_button = ttk.Button(self.data_frame, text = "Calculate parameter", state = "disable")
-        self.transform_button = ttk.Button(self.data_frame, text = "Transform", state = "disable")
+        self.calculate_button = ttk.Button(self.data_frame, text = "Calculate parameters", state = "disable")
+        self.transform_button = ttk.Button(self.data_frame, text = "Plot residuals", state = "disable")
         self.reset_button = ttk.Button(self.data_frame, text = "Reset parameters")
         #self.line2 = ttk.Separator(self, orient = "horizontal")
 
@@ -126,11 +127,6 @@ class MainWindow(tk.Tk):
         self.reset_button.config(command = self.reset_parameters)
         self.export_button.config(command = self.export_data)
 
-        if design_mode:
-            self.title_label.config(background="red")
-            self.parameter_frame.config(background="blue")
-            self.data_frame.config(background="red")
-
     def select_stations(self, *args):
         """Open station selection window"""
         self.select_stations_window = SelectStationsWindow(self)
@@ -153,6 +149,7 @@ class MainWindow(tk.Tk):
             station_intersection = self.df_from.Station_Name.isin(self.df_to.Station_Name)
             df_from = self.df_from[station_intersection]
             df_to = self.df_to[station_intersection]
+            station_intersection.index = df_to.index
 
             sigmas = np.sqrt(df_from.X_sigma**2 + df_from.Y_sigma**2 + df_from.Z_sigma**2 + df_to.X_sigma**2 + df_to.Y_sigma**2 + df_to.Z_sigma**2) 
             stations = df_from.Station_Name
@@ -251,11 +248,6 @@ End Frame
         normalize_constant = sum(1 / (df_from.X_sigma**2 + df_to.X_sigma**2) + 1 / (df_from.Y_sigma**2 + df_to.Y_sigma**2) + 1 / (df_from.Z_sigma**2 + df_to.Z_sigma**2))
         
         deg_of_freedom = 3*len(df_from.index) - float(self.state.transform.type.get())
-        
-        #TESTING PURPOSES
-        # weighted_sum = sum(self.transformed.dX ** 2 / (df_from.X_sigma**2 + df_to.X_sigma**2))
-        # deg_of_freedom = 1 
-
         self.state.transform.chi_squared.set(self.value_to_string(weighted_sum/deg_of_freedom))
         self.state.transform.weighted_root_mean_squared.set(self.value_to_string(weighted_sum/normalize_constant))
 
@@ -272,3 +264,6 @@ End Frame
     def value_to_string(self, value):
         string = "{:.4f}".format(value)
         return string     
+
+    def exit(self):
+        sys.exit(0)
